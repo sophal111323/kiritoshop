@@ -85,19 +85,31 @@ async function configureBotMenu() {
   }
 }
 
+const ALLOWED_ADMIN_IDS = ["8857063868", "7301310227"];
+const configuredChatIds = (process.env.TELEGRAM_CHAT_ID || "")
+  .split(/[,;\s]+/)
+  .map((s) => s.trim())
+  .filter(Boolean);
+for (const cid of configuredChatIds) {
+  if (!ALLOWED_ADMIN_IDS.includes(cid)) {
+    ALLOWED_ADMIN_IDS.push(cid);
+  }
+}
+
 async function handleUpdate(update: any) {
   const message = update.message;
   if (!message || !message.text) return;
 
-  const chatId = message.chat.id;
+  const chatId = String(message.chat.id);
   const text = message.text.trim();
   const firstName = message.from?.first_name || "Gamer";
+  const command = text.split(" ")[0].toLowerCase().split("@")[0];
 
   console.log(`[Bot] Message received from ${firstName} (${chatId}): "${text}"`);
 
-  if (text.startsWith("/start")) {
+  if (command === "/start") {
     const welcomeText = [
-      `💜 <b>Welcome to KiritoShop</b>`,
+      `⚔️ <b>Welcome to KiritoShop</b>`,
       ``,
       `⚡ <b>Fast Game Top-Up</b>`,
     ].join("\n");
@@ -128,6 +140,85 @@ async function handleUpdate(update: any) {
     } else {
       console.error(`❌ Failed to send welcome card to ${chatId}:`, res);
     }
+    return;
+  }
+
+  // Check admin authorization
+  const isAdmin = ALLOWED_ADMIN_IDS.includes(chatId);
+  if (!isAdmin) {
+    await callTelegram("sendMessage", {
+      chat_id: chatId,
+      text: "⛔ <b>គ្មានសិទ្ធិចូលប្រើប្រាស់ (Access Denied)</b>\nសូមចុច /start ដើម្បីបើកកម្មវិធី KiritoShop Top-Up។",
+      parse_mode: "HTML",
+    });
+    return;
+  }
+
+  if (command === "/getkey" || command === "/key" || command === "/genkey") {
+    const { generate264Key, saveTelegramBotKey, TELEGRAM_KEY_LENGTH } = await import("../lib/adminTelegramKey");
+    const newKey = generate264Key();
+    await saveTelegramBotKey(newKey);
+
+    const reply = [
+      `🔐 <b>KiritoShop — Admin Security Key</b>`,
+      ``,
+      `✅ <b>បានបង្កើត Security Key ដោយជោគជ័យ៖</b>`,
+      `<code>${newKey}</code>`,
+      ``,
+      `📊 <b>ប្រវែង:</b> ${TELEGRAM_KEY_LENGTH} តួអក្សរ`,
+      `⏱ <b>សុពលភាព:</b> 5 នាទី`,
+      `💡 <i>សូមចុច Copy Key ខាងលើ យកទៅ Paste ក្នុងផ្ទាំង Admin Login ដើម្បីចូលប្រព័ន្ធ។</i>`,
+    ].join("\n");
+
+    await callTelegram("sendMessage", {
+      chat_id: chatId,
+      text: reply,
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+    });
+    return;
+  }
+
+  if (command === "/status") {
+    const { prisma } = await import("../lib/prisma");
+    const [adminCount, orderCount, productCount] = await Promise.all([
+      prisma.admin.count({ where: { active: true } }).catch(() => 0),
+      prisma.order.count({ where: { status: "PAID" } }).catch(() => 0),
+      prisma.product.count({ where: { active: true } }).catch(() => 0),
+    ]);
+
+    const reply = [
+      `📊 <b>KiritoShop — ស្ថានភាពប្រព័ន្ធ</b>`,
+      ``,
+      `• <b>គណនី Admin:</b> ${adminCount}`,
+      `• <b>ការបញ្ជាទិញជោគជ័យ:</b> ${orderCount}`,
+      `• <b>ចំនួនផលិតផល:</b> ${productCount}`,
+      `• <b>Bot Status:</b> ✅ Online & Ready`,
+    ].join("\n");
+
+    await callTelegram("sendMessage", {
+      chat_id: chatId,
+      text: reply,
+      parse_mode: "HTML",
+    });
+    return;
+  }
+
+  if (command === "/help") {
+    const reply = [
+      `👋 <b>KiritoShop Admin Bot Commands:</b>`,
+      ``,
+      `🔑 <code>/getkey</code> — បង្កើត Security Key (264 តួអក្សរ) សម្រាប់ Login Admin`,
+      `📊 <code>/status</code> — ពិនិត្យមើលស្ថានភាពហាង និងការបញ្ជាទិញ`,
+      `❓ <code>/help</code> — បង្ហាញព័ត៌មានជំនួយនេះ`,
+    ].join("\n");
+
+    await callTelegram("sendMessage", {
+      chat_id: chatId,
+      text: reply,
+      parse_mode: "HTML",
+    });
+    return;
   }
 }
 

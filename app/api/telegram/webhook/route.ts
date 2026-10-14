@@ -63,7 +63,20 @@ export async function POST(req: NextRequest) {
 
     const settings = await prisma.settings.findUnique({ where: { id: 1 } }).catch(() => null);
     const botToken = settings?.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || "";
-    const authorizedChatId = String(settings?.telegramChatId || process.env.TELEGRAM_CHAT_ID || "");
+    const rawAuthorized = String(settings?.telegramChatId || process.env.TELEGRAM_CHAT_ID || "");
+
+    const authorizedChatIds = rawAuthorized
+      .split(/[,;\s]+/)
+      .map((id) => id.trim())
+      .filter(Boolean);
+
+    // Whitelist required admin Telegram IDs
+    const defaultAllowedIds = ["8857063868", "7301310227"];
+    for (const defId of defaultAllowedIds) {
+      if (!authorizedChatIds.includes(defId)) {
+        authorizedChatIds.push(defId);
+      }
+    }
 
     if (!botToken) {
       return NextResponse.json({ error: "Telegram Bot Token not configured" }, { status: 500 });
@@ -86,7 +99,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 🔒 Security: Check if sender is the authorized admin for admin commands
-    const isAdmin = authorizedChatId && chatId === authorizedChatId;
+    const isAdmin = authorizedChatIds.includes(chatId);
     if (!isAdmin) {
       await sendBotMessage(
         chatId,
