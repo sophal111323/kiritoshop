@@ -73,6 +73,42 @@ export async function notifyAndMaybeDeliverPaidOrder(orderId: string) {
     return { ok: true, isRandomSpin: true, status: "PENDING" };
   }
 
+  // ── Free Fire ឈុត (Manual Outfit / Set Delivery) ───────────────────────────
+  const isFreeFireOutfit =
+    fullOrder.game?.slug === "freefire-shop" ||
+    fullOrder.game?.name?.includes("ឈុត") ||
+    fullOrder.product?.name?.includes("ឈុត");
+
+  if (isFreeFireOutfit) {
+    await prisma.order.update({
+      where: { id: fullOrder.id },
+      data: {
+        status: "PROCESSING",
+        deliveryNote: "រង់ចាំប្រគល់អីវ៉ាន់ឈុត Free Fire ដោយ Admin (Telegram: @kiritostore46)",
+      },
+    });
+
+    await consumeOrderCouponAtomically(fullOrder.id);
+
+    const baseUrl =
+      process.env.PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || "";
+    const adminLink = baseUrl
+      ? `\n<a href="${baseUrl}/admin/orders/${fullOrder.orderNumber}">👉 Open in Admin</a>`
+      : "";
+
+    await notifyTelegram(
+      `🎽 <b>ការបញ្ជាទិញ Free Fire ឈុត ថ្មី!</b>\n` +
+        `<b>#${escapeHtml(fullOrder.orderNumber)}</b>\n` +
+        `ហ្គេម: ${escapeHtml(fullOrder.game.name)}\n` +
+        `កញ្ចប់: ${escapeHtml(fullOrder.product.name)}\n` +
+        `Player ID: <code>${escapeHtml(fullOrder.playerUid)}</code>\n` +
+        `តម្លៃ: $${fullOrder.amountUsd.toFixed(2)} (${escapeHtml(fullOrder.paymentMethod || "KHQR")})\n` +
+        `⚠️ <b>អតិថិជនបានទូទាត់រួចរាល់! ទំនាក់ទំនងមកកាន់ Telegram: @kiritostore46 ដើម្បីទទួលអីវ៉ាន់</b>${adminLink}`
+    );
+
+    return { ok: true, isFreeFireOutfit: true, status: "PROCESSING" };
+  }
+
   // 1. Run fulfillment with silentTelegram so it doesn't send a duplicate message
   const fulfillmentResult = await fulfillPaidOrder(fullOrder.orderNumber, {
     silentTelegram: true,

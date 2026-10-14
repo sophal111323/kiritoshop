@@ -705,6 +705,45 @@ export default function OrderTracker() {
               </div>
             </div>
 
+            {Boolean(
+              order.gameName?.toLowerCase().includes("free fire ឈុត") ||
+                order.gameName?.includes("ឈុត") ||
+                order.productName?.includes("ឈុត")
+            ) && ["PAID", "PROCESSING", "DELIVERED"].includes(orderStatus) && (
+              <div className="mx-5 mb-5 rounded-2xl border-2 border-sky-300 bg-gradient-to-br from-sky-50 via-white to-sky-100/70 p-5 sm:mx-6 sm:mb-6 text-center shadow-lg shadow-sky-500/10">
+                <div className="relative mx-auto mb-3 flex h-16 w-16 items-center justify-center">
+                  <div className="absolute inset-0 rounded-full bg-sky-400 opacity-40 blur-xl animate-pulse" />
+                  <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#0088cc] via-[#0099e6] to-[#29b6f6] text-white shadow-xl shadow-sky-500/40 ring-4 ring-white/90">
+                    <svg className="h-7 w-7 text-white drop-shadow-md -translate-x-0.5 translate-y-0.5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-sky-300/80 bg-sky-100 px-3 py-1 text-xs font-black text-sky-800 shadow-sm mb-2">
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+                  <span>Free Fire ឈុត — ការទូទាត់ជោគជ័យ</span>
+                </div>
+
+                <h3 className="text-lg sm:text-xl font-black text-sky-950 mb-1.5">
+                  ទំនាក់ទំនងទៅកាន់ Admin ដើម្បីទទួលបានអីវ៉ាន់
+                </h3>
+                <p className="text-xs sm:text-sm font-semibold text-sky-800/90 max-w-md mx-auto mb-4">
+                  សូមចុចលើប៊ូតុងខាងក្រោមដើម្បីឆាតទៅកាន់ Admin តាម Telegram (<b>t.me/kiritostore46</b>) និងផ្ញើលេខ Order <b>#{order.orderNumber}</b> ដើម្បីទទួលបានឈុត Free Fire របស់អ្នក!
+                </p>
+
+                <a
+                  href="https://t.me/kiritostore46"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0088cc] via-[#0099e6] to-[#29b6f6] px-6 py-3 text-sm font-black text-white shadow-xl shadow-sky-500/35 hover:scale-[1.02] active:scale-[0.98] transition-all ring-2 ring-white/70"
+                >
+                  <Send className="h-4 w-4 text-white" />
+                  <span>👉 ឆាតទៅ Admin តាម Telegram (t.me/kiritostore46)</span>
+                </a>
+              </div>
+            )}
+
             {["PAID", "PROCESSING", "DELIVERED"].includes(orderStatus) && (
               <div className="mx-5 mb-5 rounded-2xl border-2 border-purple-300 bg-gradient-to-r from-purple-900/10 via-purple-600/10 to-pink-600/10 p-4 sm:mx-6 sm:mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md shadow-purple-500/5">
                 <div className="flex items-center gap-3 text-center sm:text-left">

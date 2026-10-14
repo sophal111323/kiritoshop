@@ -577,6 +577,13 @@ export default function CheckoutClient() {
 
   const isExpired = remainingMs !== null && remainingMs <= 0 && !PAID_STATES.has(order?.status ?? "");
   const isPaid    = order ? PAID_STATES.has(order.status) : false;
+  const isFreeFireOutfit = Boolean(
+    order &&
+      (order.gameSlug === "freefire-shop" ||
+        order.gameName?.toLowerCase().includes("free fire ឈុត") ||
+        order.gameName?.includes("ឈុត") ||
+        order.productName?.includes("ឈុត"))
+  );
 
   // ✅ Auto-play payment success sound in background
   useEffect(() => {
@@ -672,6 +679,129 @@ export default function CheckoutClient() {
                         href={withOrderToken(`/order?number=${order.orderNumber}`, token)}
                         className="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
                       >
+                        Track Order
+                      </Link>
+                    </div>
+                  </>
+                ) : isFreeFireOutfit ? (
+                  <>
+                    {/* Glowing Telegram Animated Header */}
+                    <div className="relative mx-auto mb-4 flex h-20 w-20 items-center justify-center">
+                      <div className="absolute inset-0 rounded-full bg-sky-400 opacity-40 blur-xl animate-pulse" />
+                      <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#0088cc] via-[#0099e6] to-[#29b6f6] text-white shadow-xl shadow-sky-500/40 ring-4 ring-white/90 transition-transform duration-300 hover:scale-105">
+                        <svg className="h-9 w-9 text-white drop-shadow-md -translate-x-0.5 translate-y-0.5" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    <div className="inline-flex items-center gap-2 rounded-full border border-sky-300/80 bg-sky-100/90 px-3.5 py-1 text-xs font-black text-sky-800 shadow-sm mb-2.5">
+                      <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+                      <span>ការទូទាត់ប្រាក់ជោគជ័យ!</span>
+                    </div>
+
+                    <h1 className="font-display text-2xl sm:text-3xl font-black text-sky-950 mb-2 tracking-tight">
+                      ទំនាក់ទំនងទៅកាន់ Admin ដើម្បីទទួលបានអីវ៉ាន់
+                    </h1>
+
+                    <p className="mx-auto max-w-lg text-xs sm:text-sm font-semibold text-sky-800/90 leading-relaxed mb-5">
+                      ការបញ្ជាទិញ <span className="font-black text-sky-950">Free Fire ឈុត</span> របស់អ្នកបានជោគជ័យហើយ! សូមចុចប៊ូតុងខាងក្រោមដើម្បីឆាតទៅកាន់ Admin តាម Telegram ក្នុងការទទួលយកឈុតរបស់អ្នកភ្លាមៗ។
+                    </p>
+
+                    {/* Prominent Telegram Button */}
+                    <div className="mx-auto max-w-md mb-5">
+                      <a
+                        href="https://t.me/kiritostore46"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-[#0088cc] via-[#0099e6] to-[#29b6f6] px-6 py-4 text-base sm:text-lg font-black text-white shadow-xl shadow-sky-500/35 hover:shadow-2xl hover:shadow-sky-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all ring-2 ring-white/70"
+                      >
+                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 text-white shadow-inner">
+                          <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
+                          </svg>
+                        </span>
+                        <span>👉 ទំនាក់ទំនង Admin (t.me/kiritostore46)</span>
+                      </a>
+                    </div>
+
+                    {/* Order Details Card */}
+                    <div className="mx-auto max-w-md rounded-2xl border-2 border-sky-200/90 bg-white/95 p-4 sm:p-5 text-left shadow-lg shadow-sky-500/5 mb-5">
+                      <div className="flex items-center justify-between border-b border-sky-100 pb-2.5 mb-2.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-sky-600">ព័ត៌មានការទិញ Free Fire ឈុត</span>
+                        <span className="font-mono text-xs font-extrabold text-sky-900 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200">
+                          #{order.orderNumber}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2 text-xs sm:text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">ហ្គេម៖</span>
+                          <span className="font-bold text-gray-900">{order.gameName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">កញ្ចប់៖</span>
+                          <span className="font-bold text-sky-600">{order.productName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Player ID៖</span>
+                          <span className="font-mono font-bold text-gray-900">{order.playerUid}</span>
+                        </div>
+                        <div className="flex justify-between border-t border-sky-100 pt-2 font-bold">
+                          <span className="text-gray-600">តម្លៃទូទាត់៖</span>
+                          <span className="text-emerald-600 font-black">${Number(order.amountUsd).toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      {/* 1-Click Copy Info button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const msg = `សួស្តី Admin ខ្ញុំបានទូទាត់ទិញ Free Fire ឈុត (${order.productName}) រួចរាល់ហើយ!\n• លេខ Order: #${order.orderNumber}\n• Player ID: ${order.playerUid}\n• តម្លៃ: $${Number(order.amountUsd).toFixed(2)}`;
+                          copy(msg, "ff_order_info");
+                        }}
+                        className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50/90 px-4 py-2.5 text-xs font-bold text-sky-700 hover:bg-sky-100 hover:text-sky-900 transition-all active:scale-95 cursor-pointer"
+                      >
+                        {copied === "ff_order_info" ? (
+                          <>
+                            <Check className="h-4 w-4 text-emerald-600" />
+                            <span className="text-emerald-700">✓ បានចម្លងព័ត៌មាន Order រួចរាល់!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4 text-sky-600" />
+                            <span>ចម្លងព័ត៌មាន Order ដើម្បីផ្ញើទៅ Admin</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Step by step guide */}
+                    <div className="mx-auto max-w-md rounded-2xl bg-gradient-to-br from-sky-50/80 to-blue-50/40 border border-sky-100 p-4 text-left text-xs leading-relaxed text-sky-900 mb-5">
+                      <p className="font-bold text-sky-950 mb-1.5">📌 ជំហានងាយៗដើម្បីទទួលបានអីវ៉ាន់៖</p>
+                      <ol className="list-decimal list-inside space-y-1 text-sky-800">
+                        <li>ចុចប៊ូតុង <b>&quot;ចម្លងព័ត៌មាន Order&quot;</b> ខាងលើ</li>
+                        <li>ចុចលើប៊ូតុង <b>&quot;ទំនាក់ទំនង Admin&quot;</b> (t.me/kiritostore46)</li>
+                        <li>ផ្ញើសារនោះទៅកាន់ Admin ដើម្បីឱ្យ Admin ពិនិត្យ និងប្រគល់ឈុតជូនភ្លាមៗ</li>
+                      </ol>
+                    </div>
+
+                    {/* Gift Box button */}
+                    <div className="my-4">
+                      <Link
+                        href={withOrderToken(`/gift/${order.orderNumber}`, token)}
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 px-8 py-3.5 text-sm font-black text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                      >
+                        <Gift className="h-5 w-5 text-yellow-300 animate-bounce" />
+                        <span>🎁 បើកកាដូសំណាង (Open Gift)</span>
+                      </Link>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center mt-3">
+                      <Link href="/" className="inline-flex items-center justify-center rounded-xl border border-sky-300 px-6 py-2.5 text-sm font-semibold text-sky-700 hover:bg-sky-50 transition-colors">
+                        Back to Home
+                      </Link>
+                      <Link href={withOrderToken(`/order?number=${order.orderNumber}`, token)} className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-sky-700 transition-colors">
                         Track Order
                       </Link>
                     </div>
