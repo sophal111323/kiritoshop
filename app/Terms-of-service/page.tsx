@@ -284,7 +284,7 @@ export default function TermsOfServicePage() {
 
               <div className="grid gap-3 p-5 sm:grid-cols-2 sm:p-6">
                 <a
-                  href="https://t.me/kiritoshop"
+                  href="https://t.me/kiritostore46"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group rounded-[1.5rem] border border-pink-100 bg-white p-5 shadow-sm shadow-pink-100/70 transition-all duration-300 hover:-translate-y-1 hover:border-pink-300 hover:shadow-xl hover:shadow-pink-200/70"
@@ -295,11 +295,11 @@ export default function TermsOfServicePage() {
                     </svg>
                   </span>
                   <h3 className="text-lg font-black text-pink-950">Telegram</h3>
-                  <p className="mt-1 text-sm font-bold text-pink-500">@kiritoshop</p>
+                  <p className="mt-1 text-sm font-bold text-pink-500">@kiritostore46</p>
                 </a>
 
                 <a
-                  href="https://www.tiktok.com/@kiritoshop"
+                  href="https://www.tiktok.com/@kiritoshop.store?_r=1&_t=ZS-9AXZigmANa4"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group rounded-[1.5rem] border border-pink-100 bg-white p-5 shadow-sm shadow-pink-100/70 transition-all duration-300 hover:-translate-y-1 hover:border-pink-300 hover:shadow-xl hover:shadow-pink-200/70"
@@ -310,7 +310,7 @@ export default function TermsOfServicePage() {
                     </svg>
                   </span>
                   <h3 className="text-lg font-black text-pink-950">TikTok</h3>
-                  <p className="mt-1 text-sm font-bold text-pink-500">@kiritoshop</p>
+                  <p className="mt-1 text-sm font-bold text-pink-500">@kiritoshop.store</p>
                 </a>
               </div>
             </div>

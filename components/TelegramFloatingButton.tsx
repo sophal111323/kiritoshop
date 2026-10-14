@@ -1,9 +1,33 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function TelegramFloatingButton() {
   const pathname = usePathname();
+  const [telegramUrl, setTelegramUrl] = useState("https://t.me/kiritostore46");
+  const [telegramHandle, setTelegramHandle] = useState("@kiritostore46");
+
+  useEffect(() => {
+    fetch("/api/settings/public")
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data?.supportTelegram) return;
+        const raw = data.supportTelegram.trim();
+        if (raw.startsWith("https://") || raw.startsWith("http://")) {
+          setTelegramUrl(raw);
+          setTelegramHandle(`@${raw.split("/").pop()?.replace(/^@/, "") || "kiritostore46"}`);
+        } else if (raw.startsWith("t.me/")) {
+          setTelegramUrl(`https://${raw}`);
+          setTelegramHandle(`@${raw.replace(/^t\.me\//, "")}`);
+        } else {
+          const handle = raw.replace(/^@/, "");
+          setTelegramUrl(`https://t.me/${handle}`);
+          setTelegramHandle(`@${handle}`);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Do not render floating button on admin dashboard pages
   if (pathname?.startsWith("/admin")) {
@@ -19,10 +43,10 @@ export default function TelegramFloatingButton() {
       }}
     >
       <a
-        href="https://t.me/kiritoshop"
+        href={telegramUrl}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Contact support on Telegram @kiritoshop"
+        aria-label={`Contact support on Telegram ${telegramHandle}`}
         className="group relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-[#0077b5] via-[#0088cc] to-[#29b6f6] text-white ring-2 ring-white/40 shadow-[0_8px_25px_rgba(0,136,204,0.55)] hover:shadow-[0_12px_35px_rgba(0,136,204,0.75)] hover:scale-110 active:scale-95 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-[#29b6f6]/60"
       >
         {/* Soft background glow pulse */}
@@ -50,7 +74,7 @@ export default function TelegramFloatingButton() {
         <div className="pointer-events-none absolute right-full mr-3 hidden sm:flex items-center opacity-0 -translate-x-2 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0">
           <div className="relative rounded-xl bg-gray-900/90 backdrop-blur-md px-3 py-1.5 text-xs font-bold text-white shadow-xl ring-1 ring-white/10 whitespace-nowrap flex items-center gap-1.5">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Telegram: @kiritoshop</span>
+            <span>Telegram: {telegramHandle}</span>
           </div>
           {/* Arrow */}
           <div className="w-0 h-0 border-y-4 border-y-transparent border-l-4 border-l-gray-900/90" />

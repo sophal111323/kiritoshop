@@ -20,12 +20,26 @@ function socialInfo(value: string | null | undefined, fallbackUsername: string, 
 }
 
 function telegramInfo(value: string | null | undefined) {
-  const handle = value?.replace(/^@/, "") || "kiritoshop";
+  const raw = (value || "").trim();
+  if (raw.startsWith("https://") || raw.startsWith("http://")) {
+    const handle = raw.split("/").pop()?.replace(/^@/, "") || "kiritostore46";
+    return { href: raw, label: `@${handle}` };
+  }
+  if (raw.startsWith("t.me/")) {
+    return { href: `https://${raw}`, label: `@${raw.replace(/^t\.me\//, "")}` };
+  }
+  const handle = raw.replace(/^@/, "") || "kiritostore46";
   return { href: `https://t.me/${handle}`, label: `@${handle}` };
 }
 
 function tiktokInfo(value: string | null | undefined) {
-  const handle = value?.replace(/^@/, "") || "kiritoshop";
+  const raw = (value || "").trim();
+  if (raw.startsWith("https://") || raw.startsWith("http://")) {
+    const uMatch = raw.match(/@([a-zA-Z0-9_.-]+)/);
+    const handle = uMatch ? uMatch[1] : "kiritoshop.store";
+    return { href: raw, label: `@${handle}` };
+  }
+  const handle = raw.replace(/^@/, "") || "kiritoshop.store";
   return { href: `https://www.tiktok.com/@${handle}`, label: `@${handle}` };
 }
 

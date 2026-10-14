@@ -45,8 +45,8 @@ export const getPublicSettings = unstable_cache(
     return {
       siteName: settings?.siteName || "KiritoShop",
       exchangeRate: settings?.exchangeRate ?? 4100,
-      supportTelegram: settings?.supportTelegram || "@kiritoshop",
-      supportTikTok: settings?.supportTikTok || "@kiritoshop",
+      supportTelegram: settings?.supportTelegram || "@kiritostore46",
+      supportTikTok: settings?.supportTikTok || "https://www.tiktok.com/@kiritoshop.store?_r=1&_t=ZS-9AXZigmANa4",
       supportEmail: settings?.supportEmail || null,
       maintenanceMode: settings?.maintenanceMode ?? false,
       maintenanceMessage:

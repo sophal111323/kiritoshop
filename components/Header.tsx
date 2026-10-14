@@ -78,6 +78,62 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const [supportLinks, setSupportLinks] = useState({
+    telegramHref: "https://t.me/kiritostore46",
+    telegramHandle: "@kiritostore46",
+    tiktokHref: "https://www.tiktok.com/@kiritoshop.store?_r=1&_t=ZS-9AXZigmANa4",
+    tiktokHandle: "@kiritoshop.store",
+  });
+
+  useEffect(() => {
+    fetch("/api/settings/public")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data) return;
+        setSupportLinks((prev) => {
+          let tgHref = prev.telegramHref;
+          let tgHandle = prev.telegramHandle;
+          if (data.supportTelegram) {
+            const raw = data.supportTelegram.trim();
+            if (raw.startsWith("https://") || raw.startsWith("http://")) {
+              tgHref = raw;
+              tgHandle = `@${raw.split("/").pop()?.replace(/^@/, "") || "kiritostore46"}`;
+            } else if (raw.startsWith("t.me/")) {
+              tgHref = `https://${raw}`;
+              tgHandle = `@${raw.replace(/^t\.me\//, "")}`;
+            } else {
+              const handle = raw.replace(/^@/, "");
+              tgHref = `https://t.me/${handle}`;
+              tgHandle = `@${handle}`;
+            }
+          }
+
+          let ttHref = prev.tiktokHref;
+          let ttHandle = prev.tiktokHandle;
+          if (data.supportTikTok) {
+            const raw = data.supportTikTok.trim();
+            if (raw.startsWith("https://") || raw.startsWith("http://")) {
+              ttHref = raw;
+              const uMatch = raw.match(/@([a-zA-Z0-9_.-]+)/);
+              ttHandle = uMatch ? `@${uMatch[1]}` : "@kiritoshop.store";
+            } else {
+              const handle = raw.replace(/^@/, "");
+              ttHref = `https://www.tiktok.com/@${handle}`;
+              ttHandle = `@${handle}`;
+            }
+          }
+
+          return {
+            telegramHref: tgHref,
+            telegramHandle: tgHandle,
+            tiktokHref: ttHref,
+            tiktokHandle: ttHandle,
+          };
+        });
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
@@ -334,7 +390,7 @@ export default function Header() {
 
             <div className="mt-2.5 grid grid-cols-2 gap-2.5">
               <a
-                href="https://t.me/kiritoshop"
+                href={supportLinks.telegramHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setMobileOpen(false)}
@@ -347,11 +403,11 @@ export default function Header() {
                   </svg>
                 </span>
                 <span className="mt-2 block text-[12px] font-black text-sky-950">Telegram</span>
-                <span className="mt-0.5 block truncate text-[10px] font-bold text-sky-500">@kiritoshop</span>
+                <span className="mt-0.5 block truncate text-[10px] font-bold text-sky-500">{supportLinks.telegramHandle}</span>
               </a>
 
               <a
-                href="https://www.tiktok.com/@kiritoshop"
+                href={supportLinks.tiktokHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setMobileOpen(false)}
@@ -364,7 +420,7 @@ export default function Header() {
                   </svg>
                 </span>
                 <span className="mt-2 block text-[12px] font-black text-sky-950">TikTok</span>
-                <span className="mt-0.5 block truncate text-[10px] font-bold text-sky-500">@kiritoshop</span>
+                <span className="mt-0.5 block truncate text-[10px] font-bold text-sky-500">{supportLinks.tiktokHandle}</span>
               </a>
             </div>
           </div>
