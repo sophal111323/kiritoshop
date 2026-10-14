@@ -23,7 +23,7 @@ const productSchema = z
     sortOrder: z.number().int().optional().default(0),
     supplier: z
       .enum(["bay2game", "khmer_topup", "frozenyuki", "soratopup"])
-      .default("bay2game"),
+      .default("frozenyuki"),
     supplierCode: z.string().optional().nullable(),
     supplierProductCode: z.string().optional().nullable(),
   })

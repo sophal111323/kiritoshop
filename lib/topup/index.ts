@@ -69,9 +69,9 @@ const suppliers: Record<string, TopupSupplier> = {
  * Defaults to "bay2game" for backward compatibility.
  */
 export function getSupplier(supplierName?: string | null): TopupSupplier {
-  if (!supplierName) return bay2gameSupplier;
+  if (!supplierName) return frozenyukiSupplier;
   const key = supplierName.trim().toLowerCase();
-  return suppliers[key] || bay2gameSupplier;
+  return suppliers[key] || frozenyukiSupplier;
 }
 
 /**

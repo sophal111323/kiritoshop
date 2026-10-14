@@ -97,8 +97,6 @@ interface PromoOption {
 }
 
 const PROVIDER_OPTIONS = [
-  { id: "bay2game", label: "Bay2Game", icon: "⚡", codePlaceholder: "e.g. 50 (Bay2Game Code)" },
-  { id: "khmer_topup", label: "Khmer TopUp", icon: "🇰🇭", codePlaceholder: "e.g. 102 (Package ID)" },
   { id: "frozenyuki", label: "FrozenYuki", icon: "❄️", codePlaceholder: "e.g. ff:100 (Code)" },
   { id: "manual", label: "Manual (បញ្ចូលដៃ)", icon: "👤", codePlaceholder: "Optional Note" },
 ];
@@ -820,7 +818,7 @@ export default function AdminGiftBoxesPage() {
                         rewardValue: selectedProd ? selectedProd.name : "",
                         label: selectedProd ? selectedProd.name : editingSlot.label,
                         rewardAmount: selectedProd?.amount || editingSlot.rewardAmount,
-                        supplier: selectedProd?.supplier || editingSlot.supplier || "bay2game",
+                        supplier: selectedProd?.supplier || editingSlot.supplier || "frozenyuki",
                         supplierCode: selectedProd?.supplierCode || editingSlot.supplierCode,
                       });
                     }}
@@ -881,7 +879,7 @@ export default function AdminGiftBoxesPage() {
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {PROVIDER_OPTIONS.map((prov) => {
-                        const isSelected = (editingSlot.supplier || "bay2game") === prov.id;
+                        const isSelected = (editingSlot.supplier || "frozenyuki") === prov.id;
                         return (
                           <button
                             key={prov.id}
@@ -917,7 +915,7 @@ export default function AdminGiftBoxesPage() {
                       value={editingSlot.supplierCode || ""}
                       onChange={(e) => setEditingSlot({ ...editingSlot, supplierCode: e.target.value })}
                       placeholder={
-                        PROVIDER_OPTIONS.find((p) => p.id === (editingSlot.supplier || "bay2game"))?.codePlaceholder ||
+                        PROVIDER_OPTIONS.find((p) => p.id === (editingSlot.supplier || "frozenyuki"))?.codePlaceholder ||
                         "e.g. 50, ML50, 102, FF100"
                       }
                       className="input font-mono text-xs uppercase bg-black/40 border-purple-400/40 text-yellow-300 font-bold focus:border-yellow-400"
@@ -943,7 +941,7 @@ export default function AdminGiftBoxesPage() {
                               ...editingSlot,
                               label: p.name,
                               rewardAmount: p.amount || editingSlot.rewardAmount,
-                              supplier: p.supplier || editingSlot.supplier || "bay2game",
+                              supplier: p.supplier || editingSlot.supplier || "frozenyuki",
                               supplierCode: p.supplierCode || editingSlot.supplierCode,
                               productId: p.id,
                             });

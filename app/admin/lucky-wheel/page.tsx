@@ -115,8 +115,6 @@ const DEFAULT_COLORS = [
 ];
 
 const PROVIDER_OPTIONS = [
-  { id: "bay2game", label: "Bay2Game", icon: "⚡", codePlaceholder: "e.g. 50 (Bay2Game Code)" },
-  { id: "khmer_topup", label: "Khmer TopUp", icon: "🇰🇭", codePlaceholder: "e.g. 102 (Package ID)" },
   { id: "frozenyuki", label: "FrozenYuki", icon: "❄️", codePlaceholder: "e.g. ff:100 (Code)" },
   { id: "manual", label: "Manual", icon: "👤", codePlaceholder: "Optional Note (Manual Delivery)" },
 ];
@@ -154,8 +152,8 @@ export default function AdminLuckyWheelPage() {
       color: "#EC4899",
       textColor: "#FFFFFF",
       sortOrder: 0,
-      supplier: "bay2game",
-      supplierCode: "ML50",
+      supplier: "frozenyuki",
+      supplierCode: "50",
     },
     {
       label: "150 Diamonds",
@@ -165,8 +163,8 @@ export default function AdminLuckyWheelPage() {
       color: "#3B82F6",
       textColor: "#FFFFFF",
       sortOrder: 1,
-      supplier: "bay2game",
-      supplierCode: "ML150",
+      supplier: "frozenyuki",
+      supplierCode: "150",
     },
     {
       label: "500 Diamonds Jackpot",
@@ -176,8 +174,8 @@ export default function AdminLuckyWheelPage() {
       color: "#F59E0B",
       textColor: "#FFFFFF",
       sortOrder: 2,
-      supplier: "bay2game",
-      supplierCode: "ML500",
+      supplier: "frozenyuki",
+      supplierCode: "500",
     },
   ]);
 
@@ -300,8 +298,8 @@ export default function AdminLuckyWheelPage() {
         color: "#EC4899",
         textColor: "#FFFFFF",
         sortOrder: 0,
-        supplier: "bay2game",
-        supplierCode: "ML50",
+        supplier: "frozenyuki",
+        supplierCode: "50",
       },
       {
         label: "150 Diamonds",
@@ -311,8 +309,8 @@ export default function AdminLuckyWheelPage() {
         color: "#3B82F6",
         textColor: "#FFFFFF",
         sortOrder: 1,
-        supplier: "bay2game",
-        supplierCode: "ML150",
+        supplier: "frozenyuki",
+        supplierCode: "150",
       },
       {
         label: "500 Diamonds Jackpot",
@@ -322,8 +320,8 @@ export default function AdminLuckyWheelPage() {
         color: "#F59E0B",
         textColor: "#FFFFFF",
         sortOrder: 2,
-        supplier: "bay2game",
-        supplierCode: "ML500",
+        supplier: "frozenyuki",
+        supplierCode: "500",
       },
     ]);
     setPackageError(null);
@@ -359,7 +357,7 @@ export default function AdminLuckyWheelPage() {
         color: s.color || DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
         textColor: s.textColor || "#FFFFFF",
         sortOrder: s.sortOrder ?? idx,
-        supplier: s.supplier || "bay2game",
+        supplier: s.supplier || "frozenyuki",
         supplierCode: s.supplierCode || "",
         icon: s.icon || "",
       }))
@@ -371,7 +369,7 @@ export default function AdminLuckyWheelPage() {
   // Slot mutations
   const handleAddSlot = () => {
     const nextIdx = modalSlots.length;
-    const lastSupplier = modalSlots[modalSlots.length - 1]?.supplier || "bay2game";
+    const lastSupplier = modalSlots[modalSlots.length - 1]?.supplier || "frozenyuki";
     setModalSlots([
       ...modalSlots,
       {
@@ -1512,7 +1510,7 @@ export default function AdminLuckyWheelPage() {
                               <span className="text-[11px] font-bold text-gray-600 shrink-0">API Provider:</span>
                               <div className="inline-flex rounded-lg p-0.5 bg-gray-200/80 gap-0.5">
                                 {PROVIDER_OPTIONS.map((prov) => {
-                                  const isSelected = (slot.supplier || "bay2game") === prov.id;
+                                  const isSelected = (slot.supplier || "frozenyuki") === prov.id;
                                   return (
                                     <button
                                       key={prov.id}
@@ -1534,14 +1532,14 @@ export default function AdminLuckyWheelPage() {
 
                             <div className="flex items-center gap-1.5 flex-1 sm:max-w-xs">
                               <span className="text-[10px] text-gray-500 font-bold uppercase shrink-0">
-                                {(slot.supplier || "bay2game") === "manual" ? "Note:" : "Code:"}
+                                {(slot.supplier || "frozenyuki") === "manual" ? "Note:" : "Code:"}
                               </span>
                               <input
                                 type="text"
                                 value={slot.supplierCode || ""}
                                 onChange={(e) => handleUpdateSlot(index, "supplierCode", e.target.value)}
                                 placeholder={
-                                  PROVIDER_OPTIONS.find((p) => p.id === (slot.supplier || "bay2game"))?.codePlaceholder || "Product code"
+                                  PROVIDER_OPTIONS.find((p) => p.id === (slot.supplier || "frozenyuki"))?.codePlaceholder || "Product code"
                                 }
                                 className="w-full px-2.5 py-1 text-xs rounded-lg border border-gray-300 bg-white font-mono focus:border-pink-500 outline-none"
                                 title="Provider Product Code / Package ID"

@@ -122,7 +122,7 @@ export async function fulfillPaidOrder(
   }
 
   // Resolve supplier dynamically based on product configuration
-  const supplierName = (order.product?.supplier || order.topupProvider || "bay2game").toLowerCase();
+  const supplierName = (order.product?.supplier || order.topupProvider || "frozenyuki").toLowerCase();
   const supplier = getSupplier(supplierName);
 
   // ── Idempotency guard #1: this order already has a provider transaction ──
@@ -404,7 +404,7 @@ export async function refreshTopupStatus(orderNumber: string): Promise<Fulfillme
     return { success: true, skipped: true, status: "already_delivered" };
   }
 
-  const supplierName = (order.topupProvider || order.product?.supplier || "bay2game").toLowerCase();
+  const supplierName = (order.topupProvider || order.product?.supplier || "frozenyuki").toLowerCase();
   const supplier = getSupplier(supplierName);
 
   const remote = await getTopupStatus(reference, supplier.name);

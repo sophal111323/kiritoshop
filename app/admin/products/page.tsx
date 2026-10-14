@@ -455,7 +455,7 @@ function ProductForm({ games, products = [], defaultGameId, initial, onCancel, o
     active: initial?.active ?? true,
     inStock: initial?.inStock !== undefined ? initial.inStock : true,
     sortOrder: initial?.sortOrder ?? 0,
-    supplier: initial?.supplier || "bay2game",
+    supplier: initial?.supplier || "frozenyuki",
     supplierCode: initial?.supplierCode || "",
   });
   const [saving, setSaving] = useState(false);
@@ -534,7 +534,7 @@ function ProductForm({ games, products = [], defaultGameId, initial, onCancel, o
       sortOrder: Number(form.sortOrder),
       badge: form.badge || null,
       imageUrl: form.imageUrl || null,
-      supplier: form.supplier || "bay2game",
+      supplier: form.supplier || "frozenyuki",
       supplierCode: form.supplierCode || null,
       active: Boolean(form.active),
       inStock: Boolean(form.inStock),
@@ -754,11 +754,9 @@ function ProductForm({ games, products = [], defaultGameId, initial, onCancel, o
           <label className="label">Supplier / API Provider</label>
           <select
             className="input"
-            value={form.supplier}
+            value={form.supplier || "frozenyuki"}
             onChange={(e) => setForm({ ...form, supplier: e.target.value })}
           >
-            <option value="bay2game">Bay2Game</option>
-            <option value="khmer_topup">Khmer TopUp</option>
             <option value="frozenyuki">FrozenYuki / SoraTopup</option>
           </select>
         </div>
@@ -766,42 +764,21 @@ function ProductForm({ games, products = [], defaultGameId, initial, onCancel, o
         {/* Dynamic Supplier Code / Package ID input */}
         <div className="md:col-span-2">
           <label className="label">
-            {isKhmerTopup
-              ? "Khmer TopUp Package ID"
-              : isFrozenYuki
-              ? "FrozenYuki Package Code (e.g. 100 or ff:100)"
-              : "Bay2Game Product Code"}{" "}
-            — required for auto delivery
+            FrozenYuki Package Code (e.g. 100 or ff:100) — required for auto delivery
           </label>
           <input
             className="input font-mono"
-            placeholder={
-              isKhmerTopup
-                ? "e.g. 268"
-                : isFrozenYuki
-                ? "e.g. 100 or ff:100 or ml:86"
-                : "e.g. FF_100_DIA, FF_WEEKLY_PASS"
-            }
+            placeholder="e.g. 100 or ff:100 or ml:86"
             value={form.supplierCode}
             onChange={(e) => setForm({ ...form, supplierCode: e.target.value })}
           />
           {!form.supplierCode ? (
             <p className="mt-1 text-xs text-yellow-400">
-              ⚠️ Without this{" "}
-              {isKhmerTopup
-                ? "Package ID"
-                : isFrozenYuki
-                ? "Package Code"
-                : "Product Code"}
-              , top-up will NOT be sent automatically after payment.
+              ⚠️ Without this Package Code, top-up will NOT be sent automatically after payment.
             </p>
           ) : (
             <p className="mt-1 text-xs text-fox-muted">
-              {isKhmerTopup
-                ? "This numeric package_id will be sent to the Khmer TopUp API upon order completion."
-                : isFrozenYuki
-                ? "This package code will be sent to FrozenYuki / SoraTopup API upon order completion."
-                : "This product_code will be sent to the Bay2Game API upon order completion."}
+              This package code will be sent to FrozenYuki / SoraTopup API upon order completion.
             </p>
           )}
         </div>

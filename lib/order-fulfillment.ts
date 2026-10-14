@@ -142,7 +142,7 @@ export async function notifyAndMaybeDeliverPaidOrder(orderId: string) {
 
   // Supplier & Topup status summary
   const supplierName =
-    updatedOrder.product?.supplier || updatedOrder.topupProvider || "bay2game";
+    updatedOrder.product?.supplier || updatedOrder.topupProvider || "frozenyuki";
   const supplier = getSupplier(supplierName);
   const supplierDisplayName = supplier.displayName;
 
