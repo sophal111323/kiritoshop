@@ -935,18 +935,7 @@ export default function CheckoutClient() {
                       </div>
                     )}
 
-                    {/* 🎁 Open Mystery Gift Button */}
-                    <div className="my-5">
-                      <Link
-                        href={withOrderToken(`/gift/${order.orderNumber}`, token)}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-sky-500 via-cyan-500 to-blue-600 px-8 py-4 text-base font-black text-white shadow-xl shadow-sky-500/25 hover:shadow-sky-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all border border-sky-300/40 animate-pulse"
-                      >
-                        <Gift className="h-6 w-6 text-yellow-300 animate-bounce" />
-                        <span>🎁 បើកកាដូសំណាង (Open Gift)</span>
-                      </Link>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center mt-4">
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
                       <Link href="/" className="inline-flex items-center justify-center rounded-xl border border-sky-400 px-6 py-3 text-sm font-semibold text-sky-600 hover:bg-sky-50 transition-colors">
                         Back to Home
                       </Link>
