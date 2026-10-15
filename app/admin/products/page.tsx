@@ -129,6 +129,21 @@ export default function AdminProductsPage() {
     await loadAll();
   }
 
+  async function toggleDiscount(p: any) {
+    const nextDiscount = !p.isDiscount;
+    await adminFetch(`/api/admin/products/${p.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        isDiscount: nextDiscount,
+        ...(nextDiscount && (!p.originalPriceUsd || p.originalPriceUsd <= p.priceUsd)
+          ? { originalPriceUsd: Number((p.priceUsd * 1.1).toFixed(2)) }
+          : {}),
+      }),
+    });
+    await loadAll();
+  }
+
   async function deleteProduct(p: any) {
     if (!confirm(`Delete "${p.name}"?`)) return;
     await adminFetch(`/api/admin/products/${p.id}`, { method: "DELETE" });
@@ -376,6 +391,7 @@ export default function AdminProductsPage() {
                 <th className="text-left px-5 py-3">Supplier</th>
                 <th className="text-left px-5 py-3">Supplier Code / ID</th>
                 <th className="text-left px-5 py-3">Limits & Sold</th>
+                <th className="text-center px-5 py-3">Discount</th>
                 <th className="text-center px-5 py-3">Stock</th>
                 <th className="text-center px-5 py-3">Active</th>
                 <th className="text-right px-5 py-3">Actions</th>
@@ -383,9 +399,9 @@ export default function AdminProductsPage() {
             </thead>
             <tbody className="divide-y divide-fox-border">
               {loading ? (
-                <tr><td colSpan={13} className="px-5 py-12 text-center text-fox-muted">Loading...</td></tr>
+                <tr><td colSpan={14} className="px-5 py-12 text-center text-fox-muted">Loading...</td></tr>
               ) : filteredProducts.length === 0 ? (
-                <tr><td colSpan={13} className="px-5 py-16 text-center">
+                <tr><td colSpan={14} className="px-5 py-16 text-center">
                     <div className="text-4xl mb-3">💎</div>
                     <p className="text-fox-muted mb-1">No products found</p>
                     <p className="text-xs text-fox-muted/60 mb-3">Add packages for customers to purchase.</p>
@@ -431,7 +447,20 @@ export default function AdminProductsPage() {
                       </td>
                       <td className="px-5 py-3 text-right font-mono">{p.amount.toLocaleString()}</td>
                       <td className="px-5 py-3 text-right font-mono text-fox-accent">{p.bonus > 0 ? `+${p.bonus}` : "—"}</td>
-                      <td className="px-5 py-3 text-right font-mono text-fox-primary font-bold">${p.priceUsd.toFixed(2)}</td>
+                      <td className="px-5 py-3 text-right font-mono">
+                        {p.isDiscount && p.originalPriceUsd && p.originalPriceUsd > p.priceUsd ? (
+                          <div className="flex flex-col items-end">
+                            <span className="line-through text-fox-muted/80 text-[11px]">
+                              ${p.originalPriceUsd.toFixed(2)}
+                            </span>
+                            <span className="text-sky-400 font-extrabold text-sm">
+                              ★ ${p.priceUsd.toFixed(2)} ★
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-fox-primary font-bold">${p.priceUsd.toFixed(2)}</span>
+                        )}
+                      </td>
                       <td className="px-5 py-3 text-xs">
                         {p.badge ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -499,6 +528,21 @@ export default function AdminProductsPage() {
                             <span className="text-fox-muted/60">—</span>
                           )}
                         </div>
+                      </td>
+                      <td className="px-5 py-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => toggleDiscount(p)}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border transition-all shadow-sm ${
+                            p.isDiscount
+                              ? "bg-sky-500/15 text-sky-300 border-sky-500/40 hover:bg-sky-500/25"
+                              : "bg-fox-surface text-fox-muted border-fox-border hover:border-sky-500/40"
+                          }`}
+                          title={p.isDiscount ? "Click to turn OFF discount (បិទ Discount)" : "Click to turn ON discount (បើក Discount)"}
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full ${p.isDiscount ? "bg-sky-400 animate-pulse" : "bg-gray-500"}`} />
+                          <span>{p.isDiscount ? "ON" : "OFF"}</span>
+                        </button>
                       </td>
                       <td className="px-5 py-3 text-center">
                         <button
@@ -663,6 +707,8 @@ function ProductForm({ games, products = [], defaultGameId, initial, onCancel, o
     stockLimit: initial?.stockLimit !== undefined && initial?.stockLimit !== null ? initial.stockLimit : "",
     dailyLimit: initial?.dailyLimit !== undefined && initial?.dailyLimit !== null ? initial.dailyLimit : "",
     dailyLimitPerUser: initial?.dailyLimitPerUser !== undefined && initial?.dailyLimitPerUser !== null ? initial.dailyLimitPerUser : "",
+    isDiscount: initial?.isDiscount ?? false,
+    originalPriceUsd: initial?.originalPriceUsd !== undefined && initial?.originalPriceUsd !== null ? initial.originalPriceUsd : "",
   });
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -745,6 +791,11 @@ function ProductForm({ games, products = [], defaultGameId, initial, onCancel, o
       stockLimit: form.stockLimit === "" || form.stockLimit === null ? null : Math.max(0, parseInt(String(form.stockLimit), 10)),
       dailyLimit: form.dailyLimit === "" || form.dailyLimit === null ? null : Math.max(0, parseInt(String(form.dailyLimit), 10)),
       dailyLimitPerUser: form.dailyLimitPerUser === "" || form.dailyLimitPerUser === null ? null : Math.max(0, parseInt(String(form.dailyLimitPerUser), 10)),
+      isDiscount: Boolean(form.isDiscount),
+      originalPriceUsd:
+        form.isDiscount && form.originalPriceUsd !== "" && form.originalPriceUsd !== null
+          ? Math.max(0, parseFloat(String(form.originalPriceUsd)))
+          : null,
       active: Boolean(form.active),
       inStock: Boolean(form.inStock),
     };
@@ -920,6 +971,113 @@ function ProductForm({ games, products = [], defaultGameId, initial, onCancel, o
         <div>
           <label className="label">Price (USD)</label>
           <input className="input" type="number" step="0.01" value={form.priceUsd} onChange={(e) => setForm({ ...form, priceUsd: e.target.value })} required />
+        </div>
+
+        {/* Discount Configuration Section */}
+        <div className="md:col-span-3 p-4 rounded-xl border border-sky-500/30 bg-sky-950/20">
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🏷️</span>
+              <div>
+                <h4 className="font-bold text-sm text-sky-200">
+                  មុខងារបញ្ចុះតម្លៃ (Product Discount)
+                </h4>
+                <p className="text-xs text-fox-muted">
+                  បើកដើម្បីបង្ហាញតម្លៃដើមដែលបានឆូតចោល (<span className="line-through decoration-sky-400">$4.20</span>) និងតម្លៃលក់ជាក់ស្តែង (★ $4.00 ★)
+                </p>
+              </div>
+            </div>
+
+            {/* Toggle Switch */}
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <span className={`text-xs font-bold ${form.isDiscount ? "text-sky-300" : "text-fox-muted"}`}>
+                {form.isDiscount ? "បើក Discount (ON)" : "បិទ Discount (OFF)"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, isDiscount: !form.isDiscount })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                  form.isDiscount ? "bg-sky-500" : "bg-fox-border"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    form.isDiscount ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </label>
+          </div>
+
+          {form.isDiscount && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-sky-500/20">
+              <div>
+                <label className="label text-sky-200">
+                  តម្លៃដើមមុនបញ្ចុះ (Original Price USD - ឆូតចោល)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fox-muted font-bold">$</span>
+                  <input
+                    className="input pl-7 font-mono font-bold"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="ឧ. 4.20"
+                    value={form.originalPriceUsd}
+                    onChange={(e) => setForm({ ...form, originalPriceUsd: e.target.value })}
+                    required={form.isDiscount}
+                  />
+                </div>
+                <span className="text-[10px] text-fox-muted mt-1 block">
+                  តម្លៃដើមនេះនឹងត្រូវបង្ហាញដោយមានបន្ទាត់ឆូតកាត់ (ឧ. ~~$4.20~~)
+                </span>
+              </div>
+
+              <div>
+                <label className="label text-sky-200">
+                  តម្លៃដែលបានបញ្ចុះនៅសល់ (Discounted Price USD - តម្លៃលក់ជាក់ស្តែង)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sky-400 font-bold">$</span>
+                  <input
+                    className="input pl-7 font-mono font-bold text-sky-300"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="ឧ. 4.00"
+                    value={form.priceUsd}
+                    onChange={(e) => setForm({ ...form, priceUsd: e.target.value })}
+                    required
+                  />
+                </div>
+                <span className="text-[10px] text-fox-muted mt-1 block">
+                  តម្លៃដែលអតិថិជនត្រូវបង់ពិតប្រាកដ (ឧ. ★ $4.00 ★)
+                </span>
+              </div>
+
+              {/* Live Preview */}
+              <div className="sm:col-span-2 p-3 rounded-lg bg-sky-900/30 border border-sky-500/20 flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-sky-300 font-medium">ការបង្ហាញលើ Card៖</span>
+                  <div className="flex items-center gap-2">
+                    {form.originalPriceUsd && Number(form.originalPriceUsd) > Number(form.priceUsd) && (
+                      <span className="line-through text-fox-muted text-sm font-mono font-bold">
+                        ${Number(form.originalPriceUsd).toFixed(2)}
+                      </span>
+                    )}
+                    <span className="text-sky-400 font-black text-base font-mono">
+                      ★ ${Number(form.priceUsd || 0).toFixed(2)} ★
+                    </span>
+                  </div>
+                </div>
+                {form.originalPriceUsd && Number(form.originalPriceUsd) > Number(form.priceUsd) && (
+                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+                    ចំណេញ ${(Number(form.originalPriceUsd) - Number(form.priceUsd)).toFixed(2)} (-{Math.round(((Number(form.originalPriceUsd) - Number(form.priceUsd)) / Number(form.originalPriceUsd)) * 100)}%)
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Badge / Tag */}

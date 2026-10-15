@@ -29,6 +29,8 @@ const updateSchema = z
     stockLimit: z.number().int().min(0).nullable().optional(),
     dailyLimit: z.number().int().min(0).nullable().optional(),
     dailyLimitPerUser: z.number().int().min(0).nullable().optional(),
+    isDiscount: z.boolean().optional(),
+    originalPriceUsd: z.number().positive().nullable().optional(),
   })
   .transform((data) => {
     const code =

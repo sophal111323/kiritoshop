@@ -33,6 +33,8 @@ interface Product {
   dailyLimitPerUser?: number | null;
   soldCount?: number;
   todaySoldCount?: number;
+  isDiscount?: boolean;
+  originalPriceUsd?: number | null;
 }
 
 interface Game {
@@ -667,11 +669,11 @@ export default function TopUpForm({ game, products }: { game: Game; products: Pr
             <div className="space-y-6">
               {groupedProducts.map((group) => (
                 <div key={group.category} className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-base text-pink-900 tracking-tight">
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="font-display font-black text-lg sm:text-xl text-sky-950 tracking-tight">
                       {group.category}
                     </h3>
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-pink-100 text-pink-600 border border-pink-200">
+                    <span className="px-3 py-0.5 rounded-full text-xs sm:text-sm font-extrabold bg-sky-100 text-sky-600 border border-sky-200 shadow-xs">
                       {group.items.length}
                     </span>
                   </div>
@@ -691,20 +693,21 @@ export default function TopUpForm({ game, products }: { game: Game; products: Pr
                         (!p.randomPackageId || !promoApplied.allowedPackageIds.includes(p.randomPackageId))
                       );
                       const isItemDisabled = isOutOfStock || isLockedByPromo;
+                      const hasDiscount = Boolean(p.isDiscount && p.originalPriceUsd && p.originalPriceUsd > p.priceUsd);
                       return (
                         <button
                           type="button"
                           key={p.id}
                           disabled={isItemDisabled}
                           onClick={isItemDisabled ? undefined : () => setSelected(p.id)}
-                          className={`group relative overflow-hidden text-center rounded-2xl border-2 p-2.5 sm:p-3.5 transition-all duration-300 ${
+                          className={`group relative overflow-hidden text-center rounded-3xl border-2 p-2.5 sm:p-4 transition-all duration-300 ${
                             isLockedByPromo
                               ? "opacity-35 grayscale-[70%] bg-gray-100/90 border-gray-200 cursor-not-allowed select-none shadow-none pointer-events-none"
                               : isOutOfStock
                               ? "opacity-55 grayscale-[40%] bg-gray-50 border-gray-200 cursor-not-allowed select-none shadow-none hover:translate-y-0"
                               : isSelected
-                              ? "border-pink-400 bg-gradient-to-b from-pink-50 to-white shadow-lg shadow-pink-300/40 ring-2 ring-pink-400/40 hover:-translate-y-0.5 hover:shadow-lg"
-                              : "border-pink-100 bg-white hover:border-pink-300 hover:shadow-pink-200/50 hover:-translate-y-0.5 hover:shadow-lg"
+                              ? "border-sky-300 bg-gradient-to-b from-sky-50/50 via-white to-sky-50/30 shadow-xl shadow-sky-200/60 ring-2 ring-sky-300/70 hover:-translate-y-0.5"
+                              : "border-sky-100 bg-white hover:border-sky-200 hover:shadow-lg hover:shadow-sky-100/60 hover:-translate-y-0.5"
                           }`}
                           style={{
                             background: isLockedByPromo
@@ -718,21 +721,21 @@ export default function TopUpForm({ game, products }: { game: Game; products: Pr
                         >
                           {/* Shimmer on selected */}
                           {isSelected && !isItemDisabled && (
-                            <span className="pointer-events-none absolute inset-0 opacity-50">
-                              <span className="absolute -inset-y-1 -left-1/3 w-1/3 rotate-12 bg-gradient-to-r from-transparent via-pink-200/60 to-transparent animate-shimmer" />
+                            <span className="pointer-events-none absolute inset-0 opacity-40">
+                              <span className="absolute -inset-y-1 -left-1/3 w-1/3 rotate-12 bg-gradient-to-r from-transparent via-sky-200/60 to-transparent animate-shimmer" />
                             </span>
                           )}
 
                           {/* Checkmark or Out of stock indicator top-left */}
                           <span
-                            className={`absolute top-2 left-2 flex h-5 w-5 sm:h-5.5 sm:w-5.5 items-center justify-center rounded-full transition-all duration-200 ${
+                            className={`absolute top-2.5 left-2.5 flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200 ${
                               isLockedByPromo
                                 ? "bg-gray-200 text-gray-500 scale-90"
                                 : isOutOfStock
                                 ? "bg-rose-100 text-rose-600 scale-90"
                                 : isSelected
-                                ? "bg-pink-500 shadow-sm shadow-pink-300/50 scale-100"
-                                : "bg-pink-100/70 scale-90"
+                                ? "bg-sky-100 text-sky-500 border border-sky-300/80 shadow-xs scale-100"
+                                : "bg-sky-50/60 text-transparent border border-sky-100/80 scale-90 group-hover:border-sky-200"
                             }`}
                           >
                             {isLockedByPromo ? (
@@ -740,7 +743,7 @@ export default function TopUpForm({ game, products }: { game: Game; products: Pr
                             ) : isOutOfStock ? (
                               <span className="text-[10px] font-extrabold leading-none">✕</span>
                             ) : (
-                              <svg className={`h-3 w-3 transition-colors ${isSelected ? "text-white" : "text-pink-300"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <svg className={`h-3.5 w-3.5 transition-colors ${isSelected ? "text-sky-500" : "text-transparent"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                 <path d="M5 13l4 4L19 7" />
                               </svg>
                             )}
@@ -792,7 +795,7 @@ export default function TopUpForm({ game, products }: { game: Game; products: Pr
                               <img
                                 src={p.imageUrl}
                                 alt={p.name}
-                                className="h-12 w-12 sm:h-16 sm:w-16 object-contain rounded-lg shadow-sm shadow-pink-200/40 group-hover:scale-105 transition-transform duration-300"
+                                className="h-14 w-14 sm:h-20 sm:w-20 object-contain rounded-2xl bg-white shadow-xs p-1 group-hover:scale-105 transition-transform duration-300"
                               />
                             </div>
                           ) : (
@@ -802,36 +805,53 @@ export default function TopUpForm({ game, products }: { game: Game; products: Pr
                           )}
 
                           {/* Product Name */}
-                          <div className={`font-bold text-xs sm:text-sm leading-tight line-clamp-1 mb-0.5 ${isOutOfStock ? "text-gray-500 line-through decoration-rose-400" : "text-pink-800"}`}>
+                          <div className={`font-display font-extrabold text-sm sm:text-base leading-tight line-clamp-1 mb-0.5 ${isOutOfStock ? "text-gray-500 line-through decoration-rose-400" : "text-slate-800"}`}>
                             {p.name}
                           </div>
                           {p.bonus > 0 && (
-                            <div className="text-[10px] sm:text-xs text-pink-400 font-medium line-clamp-1">
+                            <div className="text-[10px] sm:text-xs text-sky-500 font-semibold line-clamp-1 mb-0.5">
                               + {p.bonus} bonus
                             </div>
                           )}
 
-                          {/* Sparkle divider */}
-                          <div className="flex items-center gap-1.5 my-1.5 sm:my-2 px-1">
-                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-pink-200 to-pink-300" />
-                            <svg className="h-2 w-2 text-pink-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
-                            </svg>
-                            <div className="flex-1 h-px bg-gradient-to-l from-transparent via-pink-200 to-pink-300" />
+                          {/* Star divider line */}
+                          <div className="flex items-center gap-1.5 my-1.5 sm:my-2 px-3">
+                            <div className="flex-1 h-[1.5px] bg-gradient-to-r from-transparent via-sky-300 to-sky-400" />
+                            <span className="text-sky-400 text-xs leading-none select-none font-black">★</span>
+                            <div className="flex-1 h-[1.5px] bg-gradient-to-l from-transparent via-sky-300 to-sky-400" />
                           </div>
 
-                          {/* Price with sparkles */}
-                          <div className="flex items-center justify-center gap-1">
-                            <svg className={`h-2.5 w-2.5 shrink-0 transition-colors ${isSelected ? "text-pink-500" : "text-pink-300"}`} viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
-                            </svg>
-                            <span className={`font-mono font-extrabold text-sm sm:text-base transition-colors ${isOutOfStock ? "text-gray-400" : isSelected ? "text-pink-600" : "text-pink-500"}`}>
-                              {format(p.priceUsd)}
-                            </span>
-                            <svg className={`h-2.5 w-2.5 shrink-0 transition-colors ${isSelected ? "text-pink-500" : "text-pink-300"}`} viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
-                            </svg>
-                          </div>
+                          {/* Price section */}
+                          {hasDiscount && p.originalPriceUsd ? (
+                            <div className="flex flex-col items-center justify-center">
+                              {/* Strikethrough original price */}
+                              <div className="text-slate-400 font-bold text-xs sm:text-sm leading-none mb-1">
+                                <span className="line-through decoration-sky-300 decoration-2">
+                                  {format(p.originalPriceUsd)}
+                                </span>
+                              </div>
+                              {/* Discounted price with stars */}
+                              <div className="flex items-center justify-center gap-1.5 text-sky-500">
+                                <span className="text-sky-400 text-xs sm:text-sm select-none font-black">★</span>
+                                <span className={`font-mono font-black text-lg sm:text-xl tracking-tight transition-colors ${
+                                  isOutOfStock ? "text-gray-400" : isSelected ? "text-sky-600" : "text-sky-500"
+                                }`}>
+                                  {format(p.priceUsd)}
+                                </span>
+                                <span className="text-sky-400 text-xs sm:text-sm select-none font-black">★</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center gap-1 text-sky-500">
+                              <span className="text-sky-400 text-xs select-none font-bold">★</span>
+                              <span className={`font-mono font-black text-sm sm:text-base transition-colors ${
+                                isOutOfStock ? "text-gray-400" : isSelected ? "text-sky-600" : "text-sky-500"
+                              }`}>
+                                {format(p.priceUsd)}
+                              </span>
+                              <span className="text-sky-400 text-xs select-none font-bold">★</span>
+                            </div>
+                          )}
 
                           {/* Out of stock label below price */}
                           {isOutOfStock && (
@@ -1061,6 +1081,12 @@ export default function TopUpForm({ game, products }: { game: Game; products: Pr
                     </div>
                   )}
                   <div className="border-t border-pink-200 pt-3 space-y-2">
+                    {selectedProduct.isDiscount && selectedProduct.originalPriceUsd && selectedProduct.originalPriceUsd > selectedProduct.priceUsd && !promoApplied && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-pink-500">តម្លៃដើម</span>
+                        <span className="text-fox-muted line-through font-mono">{format(selectedProduct.originalPriceUsd)}</span>
+                      </div>
+                    )}
                     {promoApplied && (
                       <>
                         <div className="flex justify-between text-sm">

@@ -31,6 +31,8 @@ const productSchema = z
     stockLimit: z.number().int().min(0).optional().nullable(),
     dailyLimit: z.number().int().min(0).optional().nullable(),
     dailyLimitPerUser: z.number().int().min(0).optional().nullable(),
+    isDiscount: z.boolean().optional().default(false),
+    originalPriceUsd: z.number().positive().optional().nullable(),
   })
   .transform((data) => {
     const code =

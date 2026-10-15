@@ -230,6 +230,8 @@ const getCachedPublicGameBySlug = unstable_cache(
             stockLimit: true,
             dailyLimit: true,
             dailyLimitPerUser: true,
+            isDiscount: true,
+            originalPriceUsd: true,
             updatedAt: true,
           },
         },

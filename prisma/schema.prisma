@@ -69,6 +69,8 @@ model Product {
   stockLimit   Int?
   dailyLimit   Int?
   dailyLimitPerUser Int?
+  isDiscount   Boolean  @default(false)
+  originalPriceUsd Float?
   orders       Order[]
   giftBoxSlots GiftBoxSlot[]
   createdAt    DateTime @default(now())

@@ -59,6 +59,8 @@ export async function GET(req: NextRequest) {
       active: true,
       inStock: true,
       sortOrder: true,
+      isDiscount: true,
+      originalPriceUsd: true,
       game: {
         select: {
           slug: true,
@@ -84,6 +86,8 @@ export async function GET(req: NextRequest) {
       price: product.priceUsd,
       priceUsd: product.priceUsd,
       priceKhr: product.priceKhr,
+      isDiscount: product.isDiscount,
+      originalPriceUsd: product.originalPriceUsd,
       currency: "USD",
       gameCurrencyName: product.game.currencyName,
       imageUrl: product.imageUrl ?? product.game.imageUrl,
