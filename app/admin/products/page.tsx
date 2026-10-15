@@ -52,6 +52,45 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<any | null>(null);
   const [creating, setCreating] = useState(false);
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [batchForm, setBatchForm] = useState({
+    stockLimit: "",
+    dailyLimit: "",
+    dailyLimitPerUser: "",
+  });
+  const [batchSaving, setBatchSaving] = useState(false);
+  const [batchMessage, setBatchMessage] = useState<string | null>(null);
+
+  async function applyBatchLimits(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedGame) return;
+    setBatchSaving(true);
+    setBatchMessage(null);
+    try {
+      const res = await adminFetch("/api/admin/products/batch-limits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gameId: selectedGame,
+          stockLimit: batchForm.stockLimit === "" ? null : Number(batchForm.stockLimit),
+          dailyLimit: batchForm.dailyLimit === "" ? null : Number(batchForm.dailyLimit),
+          dailyLimitPerUser: batchForm.dailyLimitPerUser === "" ? null : Number(batchForm.dailyLimitPerUser),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update batch limits");
+      setBatchMessage(`ជោគជ័យ! បានអនុវត្តលើទំនិញចំនួន ${data.updatedCount} ក្នុងហាងនេះ។`);
+      await loadAll();
+      setTimeout(() => {
+        setShowBatchModal(false);
+        setBatchMessage(null);
+      }, 1500);
+    } catch (err: any) {
+      setBatchMessage(`Error: ${err.message}`);
+    } finally {
+      setBatchSaving(false);
+    }
+  }
 
   async function loadAll() {
     setLoading(true);
@@ -187,7 +226,24 @@ export default function AdminProductsPage() {
           <h1 className="font-display text-3xl font-bold">Products</h1>
           <p className="text-fox-muted">Manage products and customize which Slot they belong to.</p>
         </div>
-        <button onClick={() => setCreating(true)} className="btn-primary">+ Add Product</button>
+        <div className="flex items-center gap-3">
+          {selectedGame && (
+            <button
+              type="button"
+              onClick={() => {
+                setBatchForm({ stockLimit: "", dailyLimit: "", dailyLimitPerUser: "" });
+                setBatchMessage(null);
+                setShowBatchModal(true);
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold border border-purple-500/40 bg-purple-900/30 text-purple-200 hover:bg-purple-800/50 transition-all flex items-center gap-1.5 shadow-sm"
+              title="កំណត់ចំនួនទិញជាក្រុមសម្រាប់ហ្គេមដែលបានជ្រើសរើស"
+            >
+              <span>⚙️</span>
+              <span>កំណត់ចំនួនទិញជាក្រុម ({currentGame?.name || "Selected Game"})</span>
+            </button>
+          )}
+          <button onClick={() => setCreating(true)} className="btn-primary">+ Add Product</button>
+        </div>
       </div>
 
       <div className="card p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -319,6 +375,7 @@ export default function AdminProductsPage() {
                 <th className="text-left px-5 py-3">Badge</th>
                 <th className="text-left px-5 py-3">Supplier</th>
                 <th className="text-left px-5 py-3">Supplier Code / ID</th>
+                <th className="text-left px-5 py-3">Limits & Sold</th>
                 <th className="text-center px-5 py-3">Stock</th>
                 <th className="text-center px-5 py-3">Active</th>
                 <th className="text-right px-5 py-3">Actions</th>
@@ -326,9 +383,9 @@ export default function AdminProductsPage() {
             </thead>
             <tbody className="divide-y divide-fox-border">
               {loading ? (
-                <tr><td colSpan={12} className="px-5 py-12 text-center text-fox-muted">Loading...</td></tr>
+                <tr><td colSpan={13} className="px-5 py-12 text-center text-fox-muted">Loading...</td></tr>
               ) : filteredProducts.length === 0 ? (
-                <tr><td colSpan={12} className="px-5 py-16 text-center">
+                <tr><td colSpan={13} className="px-5 py-16 text-center">
                     <div className="text-4xl mb-3">💎</div>
                     <p className="text-fox-muted mb-1">No products found</p>
                     <p className="text-xs text-fox-muted/60 mb-3">Add packages for customers to purchase.</p>
@@ -404,6 +461,45 @@ export default function AdminProductsPage() {
                           <span className="text-yellow-400">⚠️ not set</span>
                         )}
                       </td>
+                      <td className="px-5 py-3 text-xs">
+                        <div className="space-y-0.5 min-w-[130px]">
+                          {p.stockLimit !== null && p.stockLimit !== undefined ? (
+                            <div className="font-semibold text-purple-300 flex items-center gap-1">
+                              <span>ស្តុក:</span>
+                              <span className="font-mono text-white bg-purple-900/60 px-1 rounded text-[11px]">
+                                {p.stockLimit}
+                              </span>
+                              <span className="text-[10px] text-emerald-400">
+                                (លក់: {p.soldCount || 0})
+                              </span>
+                            </div>
+                          ) : null}
+                          {p.dailyLimit !== null && p.dailyLimit !== undefined ? (
+                            <div className="text-pink-300 font-semibold flex items-center gap-1">
+                              <span>កំណត់:</span>
+                              <span className="font-mono text-white bg-pink-900/60 px-1 rounded text-[11px]">
+                                {p.dailyLimit}
+                              </span>
+                              <span className="text-[10px]">/ថ្ងៃ</span>
+                              <span className="text-[10px] text-yellow-300">
+                                ({p.todaySoldCount || 0})
+                              </span>
+                            </div>
+                          ) : null}
+                          {p.dailyLimitPerUser !== null && p.dailyLimitPerUser !== undefined ? (
+                            <div className="text-amber-300 text-[11px] flex items-center gap-1">
+                              <span>ម្នាក់:</span>
+                              <span className="font-mono text-white bg-amber-900/60 px-1 rounded text-[11px]">
+                                {p.dailyLimitPerUser}
+                              </span>
+                              <span className="text-[10px]">/ថ្ងៃ</span>
+                            </div>
+                          ) : null}
+                          {p.stockLimit === null && p.dailyLimit === null && p.dailyLimitPerUser === null && (
+                            <span className="text-fox-muted/60">—</span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-5 py-3 text-center">
                         <button
                           type="button"
@@ -438,6 +534,113 @@ export default function AdminProductsPage() {
           </table>
         </div>
       </div>
+
+      {/* Batch Limits Modal */}
+      {showBatchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs animate-fadeIn">
+          <div className="card w-full max-w-lg p-6 bg-fox-card border border-purple-500/40 shadow-2xl rounded-2xl relative">
+            <div className="flex items-center justify-between mb-4 border-b border-fox-border pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">⚙️</span>
+                <div>
+                  <h3 className="font-bold text-lg text-white">កំណត់ចំនួនទិញជាក្រុម (Batch Set Limits)</h3>
+                  <p className="text-xs text-purple-300">
+                    សម្រាប់ហាង៖ <span className="font-bold text-white">{currentGame?.name}</span> ({filteredProducts.length} មុខទំនិញ)
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBatchModal(false)}
+                className="text-fox-muted hover:text-white text-lg font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={applyBatchLimits} className="space-y-4">
+              <p className="text-xs text-fox-muted">
+                ការកំណត់នេះនឹងត្រូវអនុវត្តទៅលើរាល់មុខទំនិញទាំងអស់ក្នុងហាងនេះ។ បើទុកប្រអប់ណាទំនេរ វានឹងកំណត់ទៅជា <span className="text-yellow-400 font-semibold">គ្មានកំណត់ (Unlimited)</span>។
+              </p>
+
+              <div>
+                <label className="label">ស្តុកសរុប (Total Stock Limit ក្នុង១មុខទំនិញ)</label>
+                <input
+                  className="input font-mono"
+                  type="number"
+                  min="0"
+                  placeholder="ឧ. 10 (ទុកទំនេរ = គ្មានកំណត់)"
+                  value={batchForm.stockLimit}
+                  onChange={(e) => setBatchForm({ ...batchForm, stockLimit: e.target.value })}
+                />
+                <span className="text-[10px] text-fox-muted mt-1 block">
+                  ពេលលក់គ្រប់ចំនួននេះ មុខទំនិញនឹង Out of Stock ដោយស្វ័យប្រវត្តិ
+                </span>
+              </div>
+
+              <div>
+                <label className="label">កំណត់ទិញក្នុង១ថ្ងៃ (Daily Purchase Limit សរុប/ថ្ងៃ)</label>
+                <input
+                  className="input font-mono"
+                  type="number"
+                  min="0"
+                  placeholder="ឧ. 5 (ទុកទំនេរ = គ្មានកំណត់)"
+                  value={batchForm.dailyLimit}
+                  onChange={(e) => setBatchForm({ ...batchForm, dailyLimit: e.target.value })}
+                />
+                <span className="text-[10px] text-fox-muted mt-1 block">
+                  ចំនួនដែលអាចទិញបានសរុបក្នុង១ថ្ងៃ (Reset ម៉ោង 00:00 យប់)
+                </span>
+              </div>
+
+              <div>
+                <label className="label">កំណត់ក្នុងម្នាក់/ថ្ងៃ (Per Player ID Daily Limit)</label>
+                <input
+                  className="input font-mono"
+                  type="number"
+                  min="0"
+                  placeholder="ឧ. 1 (ទុកទំនេរ = គ្មានកំណត់)"
+                  value={batchForm.dailyLimitPerUser}
+                  onChange={(e) => setBatchForm({ ...batchForm, dailyLimitPerUser: e.target.value })}
+                />
+                <span className="text-[10px] text-fox-muted mt-1 block">
+                  Player ID មួយអាចទិញបានប៉ុន្មានដងក្នុងមួយថ្ងៃ
+                </span>
+              </div>
+
+              {batchMessage && (
+                <div
+                  className={`p-3 rounded-xl text-xs font-semibold ${
+                    batchMessage.startsWith("Error")
+                      ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                      : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                  }`}
+                >
+                  {batchMessage}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-fox-border">
+                <button
+                  type="button"
+                  onClick={() => setShowBatchModal(false)}
+                  disabled={batchSaving}
+                  className="btn-ghost text-xs"
+                >
+                  បោះបង់ (Cancel)
+                </button>
+                <button
+                  type="submit"
+                  disabled={batchSaving}
+                  className="btn-primary text-xs font-bold"
+                >
+                  {batchSaving ? "កំពុងអនុវត្ត..." : `អនុវត្តលើ ${filteredProducts.length} មុខទំនិញ`}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -457,6 +660,9 @@ function ProductForm({ games, products = [], defaultGameId, initial, onCancel, o
     sortOrder: initial?.sortOrder ?? 0,
     supplier: initial?.supplier || "frozenyuki",
     supplierCode: initial?.supplierCode || "",
+    stockLimit: initial?.stockLimit !== undefined && initial?.stockLimit !== null ? initial.stockLimit : "",
+    dailyLimit: initial?.dailyLimit !== undefined && initial?.dailyLimit !== null ? initial.dailyLimit : "",
+    dailyLimitPerUser: initial?.dailyLimitPerUser !== undefined && initial?.dailyLimitPerUser !== null ? initial.dailyLimitPerUser : "",
   });
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -536,6 +742,9 @@ function ProductForm({ games, products = [], defaultGameId, initial, onCancel, o
       imageUrl: form.imageUrl || null,
       supplier: form.supplier || "frozenyuki",
       supplierCode: form.supplierCode || null,
+      stockLimit: form.stockLimit === "" || form.stockLimit === null ? null : Math.max(0, parseInt(String(form.stockLimit), 10)),
+      dailyLimit: form.dailyLimit === "" || form.dailyLimit === null ? null : Math.max(0, parseInt(String(form.dailyLimit), 10)),
+      dailyLimitPerUser: form.dailyLimitPerUser === "" || form.dailyLimitPerUser === null ? null : Math.max(0, parseInt(String(form.dailyLimitPerUser), 10)),
       active: Boolean(form.active),
       inStock: Boolean(form.inStock),
     };
@@ -833,6 +1042,72 @@ function ProductForm({ games, products = [], defaultGameId, initial, onCancel, o
             </label>
           </div>
         </div>
+        {/* Stock & Purchase Limits */}
+        <div className="md:col-span-3 p-4 rounded-xl border border-purple-500/30 bg-purple-950/20">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-base">📦</span>
+            <h4 className="font-bold text-sm text-purple-200">
+              ការកំណត់ស្តុក និងចំនួនដែលអាចទិញបាន (Stock & Purchase Limits)
+            </h4>
+          </div>
+          <p className="text-xs text-fox-muted mb-3">
+            លក្ខខណ្ឌ៖ នៅពេលអតិថិជនបានបង់ប្រាក់រួចរាល់ទើបរាប់ជាបានទិញ ១។ នៅពេលគ្រប់ចំនួនកំណត់ ទំនិញនឹង Out of Stock ដោយស្វ័យប្រវត្តិ។
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="label">
+                ស្តុកសរុប (Total Stock Limit)
+              </label>
+              <input
+                className="input font-mono"
+                type="number"
+                min="0"
+                placeholder="ឧ. 10 (ទំនេរ = គ្មានកំណត់)"
+                value={form.stockLimit}
+                onChange={(e) => setForm({ ...form, stockLimit: e.target.value })}
+              />
+              <span className="text-[10px] text-fox-muted mt-1 block">
+                ពេលលក់គ្រប់ចំនួននេះ ទំនិញនឹងដាច់ស្តុកភ្លាម
+              </span>
+            </div>
+
+            <div>
+              <label className="label">
+                កំណត់ទិញក្នុង១ថ្ងៃ (Daily Limit)
+              </label>
+              <input
+                className="input font-mono"
+                type="number"
+                min="0"
+                placeholder="ឧ. 5 (ទំនេរ = គ្មានកំណត់)"
+                value={form.dailyLimit}
+                onChange={(e) => setForm({ ...form, dailyLimit: e.target.value })}
+              />
+              <span className="text-[10px] text-fox-muted mt-1 block">
+                ចំនួនទិញសរុបក្នុង១ថ្ងៃ (Reset ម៉ោង 00:00 យប់)
+              </span>
+            </div>
+
+            <div>
+              <label className="label">
+                កំណត់ក្នុងម្នាក់/ថ្ងៃ (Per Player UID)
+              </label>
+              <input
+                className="input font-mono"
+                type="number"
+                min="0"
+                placeholder="ឧ. 1 (ទំនេរ = គ្មានកំណត់)"
+                value={form.dailyLimitPerUser}
+                onChange={(e) => setForm({ ...form, dailyLimitPerUser: e.target.value })}
+              />
+              <span className="text-[10px] text-fox-muted mt-1 block">
+                Player ID មួយអាចទិញបានប៉ុន្មានដងក្នុង១ថ្ងៃ
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div>
           <label className="label">Sort Order</label>
           <input className="input" type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: e.target.value })} />

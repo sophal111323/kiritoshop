@@ -7,6 +7,7 @@ import { markAffiliateOrderCompleted } from "@/lib/affiliate/store";
 import { extractRedeemCode } from "@/lib/redeem";
 import { consumeOrderCouponAtomically } from "@/lib/coupon";
 import { generateOrderToken } from "@/lib/orderToken";
+import { revalidateAdminChange } from "@/lib/adminRevalidate";
 
 /**
  * Runs post-payment work after an order safely transitions to PAID.
@@ -21,6 +22,34 @@ export async function notifyAndMaybeDeliverPaidOrder(orderId: string) {
   });
 
   if (!fullOrder) return null;
+
+  // ── Auto Stock Limit Check: Mark product out of stock when limit reached ──
+  if (fullOrder.productId && fullOrder.product) {
+    const p = fullOrder.product;
+    if (p.stockLimit !== null && p.stockLimit !== undefined) {
+      const paidOrdersCount = await prisma.order.count({
+        where: {
+          productId: p.id,
+          status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+        },
+      });
+      if (paidOrdersCount >= p.stockLimit && p.inStock !== false) {
+        await prisma.product.update({
+          where: { id: p.id },
+          data: { inStock: false },
+        });
+        if (fullOrder.game?.slug) {
+          revalidateAdminChange("products", { gameSlug: fullOrder.game.slug });
+        }
+        await notifyTelegram(
+          `🔴 <b>[ទំនិញដាច់ស្តុក / OUT OF STOCK]</b>\n` +
+            `ទំនិញ: <b>${escapeHtml(p.name)}</b> (${escapeHtml(fullOrder.game?.name)})\n` +
+            `បានលក់គ្រប់ចំនួន: <b>${paidOrdersCount}/${p.stockLimit}</b>\n` +
+            `ប្រព័ន្ធបានប្តូរទៅជា <b>Out of Stock (អស់ស្តុក)</b> ដោយស្វ័យប្រវត្តិ!`
+        );
+      }
+    }
+  }
 
   // ── Promoter attribution: mark affiliate order completed ($0.04 credited)
   try {

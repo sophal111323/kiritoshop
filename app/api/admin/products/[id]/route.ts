@@ -26,6 +26,9 @@ const updateSchema = z
       .optional(),
     supplierCode: z.string().nullable().optional(),
     supplierProductCode: z.string().nullable().optional(),
+    stockLimit: z.number().int().min(0).nullable().optional(),
+    dailyLimit: z.number().int().min(0).nullable().optional(),
+    dailyLimitPerUser: z.number().int().min(0).nullable().optional(),
   })
   .transform((data) => {
     const code =

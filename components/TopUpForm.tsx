@@ -28,6 +28,11 @@ interface Product {
   inStock?: boolean;
   isRandomSpin?: boolean;
   randomPackageId?: string | null;
+  stockLimit?: number | null;
+  dailyLimit?: number | null;
+  dailyLimitPerUser?: number | null;
+  soldCount?: number;
+  todaySoldCount?: number;
 }
 
 interface Game {
@@ -674,7 +679,10 @@ export default function TopUpForm({ game, products }: { game: Game; products: Pr
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3.5">
                     {group.items.map((p) => {
                       const isSelected = selected === p.id;
-                      const isOutOfStock = p.inStock === false;
+                      const isOutOfStock =
+                        p.inStock === false ||
+                        Boolean(p.stockLimit && p.soldCount !== undefined && p.soldCount >= p.stockLimit) ||
+                        Boolean(p.dailyLimit && p.todaySoldCount !== undefined && p.todaySoldCount >= p.dailyLimit);
                       const isLockedByPromo = Boolean(
                         promoApplied &&
                         Array.isArray(promoApplied.allowedPackageIds) &&
@@ -749,7 +757,9 @@ export default function TopUpForm({ game, products }: { game: Game; products: Pr
                             <div className="absolute -top-1.5 right-2 z-10">
                               <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 text-white font-extrabold text-[9px] px-2 py-0.5 shadow-sm shadow-rose-500/30">
                                 <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                                អស់ស្តុក
+                                {p.dailyLimit && p.todaySoldCount !== undefined && p.todaySoldCount >= p.dailyLimit
+                                  ? "អស់ស្តុកថ្ងៃនេះ"
+                                  : "អស់ស្តុក"}
                               </span>
                             </div>
                           ) : p.badge ? (
@@ -760,6 +770,18 @@ export default function TopUpForm({ game, products }: { game: Game; products: Pr
                               {!["Hot", "Best Value", "Pass"].includes(p.badge) && (
                                 <span className="badge-best !text-[9px] !px-2 !py-0.5">{p.badge}</span>
                               )}
+                            </div>
+                          ) : p.stockLimit ? (
+                            <div className="absolute -top-1.5 right-2 z-10">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-purple-600 text-white font-extrabold text-[9px] px-2 py-0.5 shadow-sm">
+                                សល់ {Math.max(0, p.stockLimit - (p.soldCount || 0))}
+                              </span>
+                            </div>
+                          ) : p.dailyLimit ? (
+                            <div className="absolute -top-1.5 right-2 z-10">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-pink-600 text-white font-extrabold text-[9px] px-2 py-0.5 shadow-sm">
+                                {p.dailyLimit}/ថ្ងៃ
+                              </span>
                             </div>
                           ) : null}
 

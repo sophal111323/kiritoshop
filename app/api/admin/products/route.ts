@@ -5,6 +5,8 @@ import { withAdminAuth } from "@/lib/withAdminAuth";
 import { writeAuditForAdmin } from "@/lib/audit";
 import { revalidateAdminChange } from "@/lib/adminRevalidate";
 
+import { getStartOfTodayCambodia } from "@/lib/timeUtils";
+
 export const dynamic = "force-dynamic";
 
 const productSchema = z
@@ -26,6 +28,9 @@ const productSchema = z
       .default("frozenyuki"),
     supplierCode: z.string().optional().nullable(),
     supplierProductCode: z.string().optional().nullable(),
+    stockLimit: z.number().int().min(0).optional().nullable(),
+    dailyLimit: z.number().int().min(0).optional().nullable(),
+    dailyLimitPerUser: z.number().int().min(0).optional().nullable(),
   })
   .transform((data) => {
     const code =
@@ -62,7 +67,50 @@ export const GET = withAdminAuth(
       },
       orderBy: [{ game: { sortOrder: "asc" } }, { sortOrder: "asc" }, { createdAt: "desc" }],
     });
-    return NextResponse.json(products);
+
+    if (products.length === 0) {
+      return NextResponse.json([]);
+    }
+
+    const startOfDay = getStartOfTodayCambodia();
+    const productIds = products.map((p) => p.id);
+
+    const [totalPaidGroup, todayPaidGroup] = await Promise.all([
+      prisma.order.groupBy({
+        by: ["productId"],
+        where: {
+          productId: { in: productIds },
+          status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+        },
+        _count: { id: true },
+      }),
+      prisma.order.groupBy({
+        by: ["productId"],
+        where: {
+          productId: { in: productIds },
+          status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+          createdAt: { gte: startOfDay },
+        },
+        _count: { id: true },
+      }),
+    ]);
+
+    const totalSoldMap = new Map<string, number>();
+    for (const item of totalPaidGroup) {
+      totalSoldMap.set(item.productId, item._count.id);
+    }
+    const todaySoldMap = new Map<string, number>();
+    for (const item of todayPaidGroup) {
+      todaySoldMap.set(item.productId, item._count.id);
+    }
+
+    const enriched = products.map((p) => ({
+      ...p,
+      soldCount: totalSoldMap.get(p.id) || 0,
+      todaySoldCount: todaySoldMap.get(p.id) || 0,
+    }));
+
+    return NextResponse.json(enriched);
   },
   { permission: "products.read" }
 );

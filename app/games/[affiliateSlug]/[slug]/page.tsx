@@ -120,6 +120,11 @@ export default async function AffiliateGamesPage({
             inStock: (p as any).inStock !== false,
             isRandomSpin: (p as any).isRandomSpin ?? false,
             randomPackageId: (p as any).randomPackageId ?? null,
+            stockLimit: (p as any).stockLimit ?? null,
+            dailyLimit: (p as any).dailyLimit ?? null,
+            dailyLimitPerUser: (p as any).dailyLimitPerUser ?? null,
+            soldCount: (p as any).soldCount ?? 0,
+            todaySoldCount: (p as any).todaySoldCount ?? 0,
           }))}
         />
       </main>

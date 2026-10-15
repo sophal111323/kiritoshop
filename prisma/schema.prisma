@@ -39,6 +39,8 @@ model Game {
   seoDescription String?
   checkIdGameCode String?
   topupGameCode   String?
+  dailyLimit      Int?
+  dailyLimitPerUser Int?
   products       Product[]
   orders         Order[]
   randomPackages RandomPackage[]
@@ -64,6 +66,9 @@ model Product {
   sortOrder    Int      @default(0)
   supplier     String   @default("bay2game")
   supplierCode String?
+  stockLimit   Int?
+  dailyLimit   Int?
+  dailyLimitPerUser Int?
   orders       Order[]
   giftBoxSlots GiftBoxSlot[]
   createdAt    DateTime @default(now())

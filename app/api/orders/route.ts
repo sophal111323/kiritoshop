@@ -12,6 +12,7 @@ import { recordAffiliateOrder } from "@/lib/affiliate/store";
 import { validatePromoCode } from "@/lib/coupon";
 import { logError } from "@/lib/errorLogger";
 import { generateOrderToken, isOrderTokenConfigured } from "@/lib/orderToken";
+import { getStartOfTodayCambodia } from "@/lib/timeUtils";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -278,6 +279,102 @@ export async function POST(req: NextRequest) {
           { error: "ទំនិញនេះអស់ពីស្តុកហើយ មិនអាចកុម្ម៉ង់បានទេ (This item is currently out of stock)." },
           { status: 400 }
         );
+      }
+
+      // Check product stock limit
+      if (product.stockLimit !== null && product.stockLimit !== undefined) {
+        const paidCount = await prisma.order.count({
+          where: {
+            productId: product.id,
+            status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+          },
+        });
+        if (paidCount >= product.stockLimit) {
+          await prisma.product
+            .update({
+              where: { id: product.id },
+              data: { inStock: false },
+            })
+            .catch(() => {});
+          return NextResponse.json(
+            { error: "ទំនិញនេះបានលក់អស់ពីស្តុកហើយ មិនអាចកុម្ម៉ង់បានទេ (This item is out of stock)." },
+            { status: 400 }
+          );
+        }
+      }
+
+      // Check product daily purchase limit
+      if (product.dailyLimit !== null && product.dailyLimit !== undefined) {
+        const startOfDay = getStartOfTodayCambodia();
+        const todayPaid = await prisma.order.count({
+          where: {
+            productId: product.id,
+            status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+            createdAt: { gte: startOfDay },
+          },
+        });
+        if (todayPaid >= product.dailyLimit) {
+          return NextResponse.json(
+            { error: `ទំនិញនេះបានលក់អស់ចំនួនកំណត់សម្រាប់ថ្ងៃនេះហើយ (${product.dailyLimit} ឈុតក្នុងមួយថ្ងៃ)` },
+            { status: 400 }
+          );
+        }
+      }
+
+      // Check product per-user daily purchase limit
+      if (product.dailyLimitPerUser !== null && product.dailyLimitPerUser !== undefined) {
+        const startOfDay = getStartOfTodayCambodia();
+        const userTodayPaid = await prisma.order.count({
+          where: {
+            productId: product.id,
+            playerUid: data.playerUid,
+            status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+            createdAt: { gte: startOfDay },
+          },
+        });
+        if (userTodayPaid >= product.dailyLimitPerUser) {
+          return NextResponse.json(
+            { error: `Player ID របស់អ្នកបានទិញទំនិញនេះដល់ចំនួនកំណត់ ${product.dailyLimitPerUser} ដងក្នុងមួយថ្ងៃរួចហើយ` },
+            { status: 400 }
+          );
+        }
+      }
+
+      // Check game-level daily limit
+      if ((game as any).dailyLimit) {
+        const startOfDay = getStartOfTodayCambodia();
+        const gameTodayPaid = await prisma.order.count({
+          where: {
+            gameId: game.id,
+            status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+            createdAt: { gte: startOfDay },
+          },
+        });
+        if (gameTodayPaid >= (game as any).dailyLimit) {
+          return NextResponse.json(
+            { error: `ហាង "${game.name}" បានលក់អស់ចំនួនកំណត់សម្រាប់ថ្ងៃនេះហើយ` },
+            { status: 400 }
+          );
+        }
+      }
+
+      // Check game-level per-user daily limit
+      if ((game as any).dailyLimitPerUser) {
+        const startOfDay = getStartOfTodayCambodia();
+        const userGameTodayPaid = await prisma.order.count({
+          where: {
+            gameId: game.id,
+            playerUid: data.playerUid,
+            status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+            createdAt: { gte: startOfDay },
+          },
+        });
+        if (userGameTodayPaid >= (game as any).dailyLimitPerUser) {
+          return NextResponse.json(
+            { error: `Player ID របស់អ្នកបានទិញពីហាងនេះដល់ចំនួនកំណត់ ${(game as any).dailyLimitPerUser} ដងក្នុងមួយថ្ងៃរួចហើយ` },
+            { status: 400 }
+          );
+        }
       }
     }
 

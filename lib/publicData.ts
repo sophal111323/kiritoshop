@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { maskCdnUrl } from "@/lib/cdnMask";
+import { getStartOfTodayCambodia } from "@/lib/timeUtils";
 
 const rawPublicRevalidateSeconds = Number(
   process.env.PUBLIC_DATA_REVALIDATE_SECONDS || 10
@@ -185,6 +186,8 @@ const getCachedPublicGameBySlug = unstable_cache(
         seoTitle: true,
         seoDescription: true,
         checkIdGameCode: true,
+        dailyLimit: true,
+        dailyLimitPerUser: true,
         updatedAt: true,
         products: {
           where: { active: true },
@@ -200,6 +203,9 @@ const getCachedPublicGameBySlug = unstable_cache(
             imageUrl: true,
             inStock: true,
             sortOrder: true,
+            stockLimit: true,
+            dailyLimit: true,
+            dailyLimitPerUser: true,
             updatedAt: true,
           },
         },
@@ -234,12 +240,62 @@ const getCachedPublicGameBySlug = unstable_cache(
 
     if (!game) return null;
 
-    const normalProducts = game.products.map((p) => ({
-      ...p,
-      imageUrl: maskCdnUrl(p.imageUrl) || p.imageUrl,
-      isRandomSpin: false,
-      randomPackageId: null,
-    }));
+    const hasAnyLimit = game.products.some((p) => p.stockLimit || p.dailyLimit);
+    const totalSoldMap = new Map<string, number>();
+    const todaySoldMap = new Map<string, number>();
+
+    if (hasAnyLimit) {
+      const startOfDay = getStartOfTodayCambodia();
+      const productIds = game.products.map((p) => p.id);
+
+      const [totalPaidGroup, todayPaidGroup] = await Promise.all([
+        prisma.order.groupBy({
+          by: ["productId"],
+          where: {
+            productId: { in: productIds },
+            status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+          },
+          _count: { id: true },
+        }),
+        prisma.order.groupBy({
+          by: ["productId"],
+          where: {
+            productId: { in: productIds },
+            status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+            createdAt: { gte: startOfDay },
+          },
+          _count: { id: true },
+        }),
+      ]);
+
+      for (const item of totalPaidGroup) {
+        totalSoldMap.set(item.productId, item._count.id);
+      }
+      for (const item of todayPaidGroup) {
+        todaySoldMap.set(item.productId, item._count.id);
+      }
+    }
+
+    const normalProducts = game.products.map((p) => {
+      const totalSold = totalSoldMap.get(p.id) || 0;
+      const todaySold = todaySoldMap.get(p.id) || 0;
+
+      const isStockExceeded = p.stockLimit !== null && p.stockLimit !== undefined && totalSold >= p.stockLimit;
+      const isDailyExceeded = p.dailyLimit !== null && p.dailyLimit !== undefined && todaySold >= p.dailyLimit;
+      const isAvailable = p.inStock !== false && !isStockExceeded && !isDailyExceeded;
+
+      return {
+        ...p,
+        imageUrl: maskCdnUrl(p.imageUrl) || p.imageUrl,
+        isRandomSpin: false,
+        randomPackageId: null,
+        inStock: isAvailable,
+        soldCount: totalSold,
+        todaySoldCount: todaySold,
+        isDailyLimitReached: isDailyExceeded,
+        isStockLimitReached: isStockExceeded,
+      };
+    });
 
     const mysteryProducts = (game.randomPackages || []).map((pkg) => ({
       id: `spin_${pkg.id}`,
