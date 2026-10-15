@@ -40,6 +40,8 @@ const updateSchema = z.object({
   seoDescription: z.string().optional().nullable(),
   checkIdGameCode: z.string().max(100).optional().nullable(),
   topupGameCode: z.string().max(100).optional().nullable(),
+  dailyLimit: z.number().int().min(0).optional().nullable(),
+  dailyLimitPerUser: z.number().int().min(0).optional().nullable(),
 });
 
 export const GET = withAdminAuth(

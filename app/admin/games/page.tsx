@@ -86,6 +86,7 @@ export default function AdminGamesPage() {
                 <th className="text-left px-5 py-3">Publisher</th>
                 <th className="text-right px-5 py-3">Products</th>
                 <th className="text-right px-5 py-3">Orders</th>
+                <th className="text-center px-5 py-3">Daily Limit</th>
                 <th className="text-center px-5 py-3">Featured</th>
                 <th className="text-center px-5 py-3">Active</th>
                 <th className="text-right px-5 py-3">Actions</th>
@@ -93,9 +94,9 @@ export default function AdminGamesPage() {
             </thead>
             <tbody className="divide-y divide-fox-border">
               {loading ? (
-                <tr><td colSpan={8} className="px-5 py-12 text-center text-fox-muted">Loading...</td></tr>
+                <tr><td colSpan={9} className="px-5 py-12 text-center text-fox-muted">Loading...</td></tr>
               ) : games.length === 0 ? (
-                <tr><td colSpan={8} className="px-5 py-16 text-center">
+                <tr><td colSpan={9} className="px-5 py-16 text-center">
                     <div className="text-4xl mb-3">🎮</div>
                     <p className="text-fox-muted mb-1">No games yet</p>
                     <p className="text-xs text-fox-muted/60 mb-3">Add your first game to start selling top-ups.</p>
@@ -148,6 +149,21 @@ export default function AdminGamesPage() {
                     <td className="px-5 py-3 text-right font-mono">{g._count.products}</td>
                     <td className="px-5 py-3 text-right font-mono">{g._count.orders}</td>
                     <td className="px-5 py-3 text-center">
+                      {g.dailyLimit ? (
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold font-mono ${
+                            g.isOutOfStock || (g.todayPaidCount >= g.dailyLimit)
+                              ? "bg-red-500/15 text-red-400 border border-red-500/30"
+                              : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                          }`}
+                        >
+                          {g.todayPaidCount >= g.dailyLimit ? "🔴 អស់ស្តុក" : "🟢"} {g.todayPaidCount || 0}/{g.dailyLimit}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-fox-muted font-mono">∞ Unlimited</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-center">
                       <button onClick={() => toggleFeatured(g)} className={g.featured ? "text-fox-accent" : "text-fox-muted"}>
                         {g.featured ? "★" : "☆"}
                       </button>
@@ -193,6 +209,8 @@ function GameForm({ initial, onCancel, onSaved }: { initial: any; onCancel: () =
     sortOrder: initial?.sortOrder || 0,
     checkIdGameCode: initial?.checkIdGameCode || "",
     topupGameCode: initial?.topupGameCode || "",
+    dailyLimit: initial?.dailyLimit ?? "",
+    dailyLimitPerUser: initial?.dailyLimitPerUser ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -209,6 +227,8 @@ function GameForm({ initial, onCancel, onSaved }: { initial: any; onCancel: () =
       uidExample: form.uidExample || undefined,
       checkIdGameCode: form.checkIdGameCode.trim() || undefined,
       topupGameCode: form.topupGameCode.trim() || undefined,
+      dailyLimit: form.dailyLimit === "" || form.dailyLimit === null || form.dailyLimit === undefined ? null : Number(form.dailyLimit),
+      dailyLimitPerUser: form.dailyLimitPerUser === "" || form.dailyLimitPerUser === null || form.dailyLimitPerUser === undefined ? null : Number(form.dailyLimitPerUser),
     };
     const url = initial ? `/api/admin/games/${initial.id}` : "/api/admin/games";
     const method = initial ? "PATCH" : "POST";
@@ -317,6 +337,51 @@ function GameForm({ initial, onCancel, onSaved }: { initial: any; onCancel: () =
               />
               <p className="mt-1 text-[11px] text-fox-muted">
                 API code for supplier product catalog & automated top-up delivery.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="md:col-span-2 p-4 rounded-xl bg-fox-surface/80 border border-fox-border space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <span className="text-sm font-semibold text-fox-text">📦 ដែនកំណត់ការទិញប្រចាំថ្ងៃ (Daily Stock Limit)</span>
+            <span className="text-xs text-fox-muted">Auto បិទហ្គេមលើ Homepage ថា &quot;អស់ស្តុក&quot; ពេលលក់គ្រប់ចំនួន</span>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="label flex items-center justify-between">
+                <span>ចំនួន Product អាចទិញបានក្នុងមួយថ្ងៃ (Game Daily Limit)</span>
+                <span className="text-[10px] text-amber-400 font-mono font-medium">dailyLimit</span>
+              </label>
+              <input
+                className="input font-mono text-sm"
+                type="number"
+                min="0"
+                placeholder="e.g. 10 (ទុកទទេ = គ្មានដែនកំណត់)"
+                value={form.dailyLimit}
+                onChange={(e) => setForm({ ...form, dailyLimit: e.target.value })}
+              />
+              <p className="mt-1 text-[11px] text-fox-muted">
+                ចំនួនទិញសរុបនៃផលិតផលទាំងអស់ក្នុងហ្គេមនេះក្នុងមួយថ្ងៃ។ ពេលលក់គ្រប់ចំនួន ហ្គេមនឹង auto បិទលើ Homepage ថា &quot;អស់ស្តុក&quot; ដែលមិនអាចចុចចូលមើលបាន។
+              </p>
+            </div>
+
+            <div>
+              <label className="label flex items-center justify-between">
+                <span>ដែនកំណត់ទិញក្នុងម្នាក់/ថ្ងៃ (Per-User Daily Limit)</span>
+                <span className="text-[10px] text-sky-400 font-mono font-medium">dailyLimitPerUser</span>
+              </label>
+              <input
+                className="input font-mono text-sm"
+                type="number"
+                min="0"
+                placeholder="e.g. 1 (ទុកទទេ = គ្មានដែនកំណត់)"
+                value={form.dailyLimitPerUser}
+                onChange={(e) => setForm({ ...form, dailyLimitPerUser: e.target.value })}
+              />
+              <p className="mt-1 text-[11px] text-fox-muted">
+                ចំនួនដងអតិបរមាដែល Player ID មួយអាចទិញបានក្នុងមួយថ្ងៃ (ទុកទទេប្រសិនបើមិនកំណត់)។
               </p>
             </div>
           </div>

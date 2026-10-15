@@ -221,6 +221,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Server is required for this game" }, { status: 400 });
     }
 
+    // ── Check game-level daily purchase limit ──
+    if (game.dailyLimit && game.dailyLimit > 0) {
+      const startOfDay = getStartOfTodayCambodia();
+      const gameTodayPaid = await prisma.order.count({
+        where: {
+          gameId: game.id,
+          status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+          createdAt: { gte: startOfDay },
+        },
+      });
+      if (gameTodayPaid >= game.dailyLimit) {
+        return NextResponse.json(
+          { error: `ហាង "${game.name}" បានលក់អស់ចំនួនកំណត់សម្រាប់ថ្ងៃនេះហើយ (${game.dailyLimit} ឈុតក្នុងមួយថ្ងៃ)` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // ── Check game-level per-user daily purchase limit ──
+    if (game.dailyLimitPerUser && game.dailyLimitPerUser > 0) {
+      const startOfDay = getStartOfTodayCambodia();
+      const userGameTodayPaid = await prisma.order.count({
+        where: {
+          gameId: game.id,
+          playerUid: data.playerUid,
+          status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+          createdAt: { gte: startOfDay },
+        },
+      });
+      if (userGameTodayPaid >= game.dailyLimitPerUser) {
+        return NextResponse.json(
+          { error: `Player ID របស់អ្នកបានទិញពីហាងនេះដល់ចំនួនកំណត់ ${game.dailyLimitPerUser} ដងក្នុងមួយថ្ងៃរួចហើយ` },
+          { status: 400 }
+        );
+      }
+    }
+
     let product = null;
     let randomPackage = null;
 
@@ -335,43 +372,6 @@ export async function POST(req: NextRequest) {
         if (userTodayPaid >= product.dailyLimitPerUser) {
           return NextResponse.json(
             { error: `Player ID របស់អ្នកបានទិញទំនិញនេះដល់ចំនួនកំណត់ ${product.dailyLimitPerUser} ដងក្នុងមួយថ្ងៃរួចហើយ` },
-            { status: 400 }
-          );
-        }
-      }
-
-      // Check game-level daily limit
-      if ((game as any).dailyLimit) {
-        const startOfDay = getStartOfTodayCambodia();
-        const gameTodayPaid = await prisma.order.count({
-          where: {
-            gameId: game.id,
-            status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
-            createdAt: { gte: startOfDay },
-          },
-        });
-        if (gameTodayPaid >= (game as any).dailyLimit) {
-          return NextResponse.json(
-            { error: `ហាង "${game.name}" បានលក់អស់ចំនួនកំណត់សម្រាប់ថ្ងៃនេះហើយ` },
-            { status: 400 }
-          );
-        }
-      }
-
-      // Check game-level per-user daily limit
-      if ((game as any).dailyLimitPerUser) {
-        const startOfDay = getStartOfTodayCambodia();
-        const userGameTodayPaid = await prisma.order.count({
-          where: {
-            gameId: game.id,
-            playerUid: data.playerUid,
-            status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
-            createdAt: { gte: startOfDay },
-          },
-        });
-        if (userGameTodayPaid >= (game as any).dailyLimitPerUser) {
-          return NextResponse.json(
-            { error: `Player ID របស់អ្នកបានទិញពីហាងនេះដល់ចំនួនកំណត់ ${(game as any).dailyLimitPerUser} ដងក្នុងមួយថ្ងៃរួចហើយ` },
             { status: 400 }
           );
         }

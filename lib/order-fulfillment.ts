@@ -8,6 +8,7 @@ import { extractRedeemCode } from "@/lib/redeem";
 import { consumeOrderCouponAtomically } from "@/lib/coupon";
 import { generateOrderToken } from "@/lib/orderToken";
 import { revalidateAdminChange } from "@/lib/adminRevalidate";
+import { getStartOfTodayCambodia } from "@/lib/timeUtils";
 
 /**
  * Runs post-payment work after an order safely transitions to PAID.
@@ -48,6 +49,30 @@ export async function notifyAndMaybeDeliverPaidOrder(orderId: string) {
             `ប្រព័ន្ធបានប្តូរទៅជា <b>Out of Stock (អស់ស្តុក)</b> ដោយស្វ័យប្រវត្តិ!`
         );
       }
+    }
+  }
+
+  // ── Auto Game Daily Limit Check: Alert and revalidate when daily limit reached ──
+  if (fullOrder.game && fullOrder.game.dailyLimit) {
+    const startOfDay = getStartOfTodayCambodia();
+    const gameTodayPaid = await prisma.order.count({
+      where: {
+        gameId: fullOrder.gameId,
+        status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+        createdAt: { gte: startOfDay },
+      },
+    });
+    if (gameTodayPaid >= fullOrder.game.dailyLimit) {
+      if (fullOrder.game?.slug) {
+        revalidateAdminChange("games", { gameSlug: fullOrder.game.slug });
+      }
+      revalidateAdminChange("home");
+      await notifyTelegram(
+        `🔴 <b>[ហាងពេញកំណត់ប្រចាំថ្ងៃ / GAME DAILY LIMIT REACHED]</b>\n` +
+          `ហាង: <b>${escapeHtml(fullOrder.game.name)}</b>\n` +
+          `បានលក់គ្រប់ចំនួនថ្ងៃនេះ: <b>${gameTodayPaid}/${fullOrder.game.dailyLimit}</b>\n` +
+          `ហ្គេមត្រូវបានបិទលើ Homepage ដោយស្វ័យប្រវត្តិ (Out of Stock)!`
+      );
     }
   }
 

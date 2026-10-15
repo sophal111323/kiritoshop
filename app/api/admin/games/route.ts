@@ -21,6 +21,8 @@ const imagePath = z
     message: "Must be a URL or uploaded file path",
   });
 
+import { getStartOfTodayCambodia } from "@/lib/timeUtils";
+
 const gameSchema = z.object({
   slug: z.string().min(2).regex(/^[a-z0-9-]+$/),
   name: z.string().min(1),
@@ -41,6 +43,8 @@ const gameSchema = z.object({
   seoDescription: z.string().optional().nullable(),
   checkIdGameCode: z.string().max(100).optional().nullable(),
   topupGameCode: z.string().max(100).optional().nullable(),
+  dailyLimit: z.number().int().min(0).optional().nullable(),
+  dailyLimitPerUser: z.number().int().min(0).optional().nullable(),
 });
 
 // Explicit admin allowlist. Game has no secret columns; listing fields
@@ -66,6 +70,8 @@ const ADMIN_GAME_SELECT = {
   seoDescription: true,
   checkIdGameCode: true,
   topupGameCode: true,
+  dailyLimit: true,
+  dailyLimitPerUser: true,
   createdAt: true,
   updatedAt: true,
   _count: { select: { products: true, orders: true } },
@@ -74,11 +80,37 @@ const ADMIN_GAME_SELECT = {
 export const GET = withAdminAuth(
   async () => {
     try {
-      const games = await prisma.game.findMany({
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
-        select: ADMIN_GAME_SELECT,
+      const startOfDay = getStartOfTodayCambodia();
+      const [games, todayOrders] = await Promise.all([
+        prisma.game.findMany({
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+          select: ADMIN_GAME_SELECT,
+        }),
+        prisma.order.groupBy({
+          by: ["gameId"],
+          where: {
+            status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+            createdAt: { gte: startOfDay },
+          },
+          _count: { id: true },
+        }),
+      ]);
+
+      const todayMap = new Map<string, number>();
+      for (const row of todayOrders) {
+        todayMap.set(row.gameId, row._count.id);
+      }
+
+      const gamesWithTodayStats = games.map((g) => {
+        const todayCount = todayMap.get(g.id) || 0;
+        return {
+          ...g,
+          todayPaidCount: todayCount,
+          isOutOfStock: Boolean(g.dailyLimit && g.dailyLimit > 0 && todayCount >= g.dailyLimit),
+        };
       });
-      return NextResponse.json(games, { headers: ADMIN_HEADERS });
+
+      return NextResponse.json(gamesWithTodayStats, { headers: ADMIN_HEADERS });
     } catch (error) {
       logError("[ADMIN_GAMES_API_ERROR]", error);
       return NextResponse.json(

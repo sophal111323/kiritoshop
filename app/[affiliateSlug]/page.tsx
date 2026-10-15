@@ -109,6 +109,9 @@ export default async function AffiliateStorefrontPage({
                 currencyName={game.currencyName}
                 imageUrl={game.imageUrl}
                 featured={game.featured}
+                isOutOfStock={game.isOutOfStock}
+                dailyLimit={game.dailyLimit}
+                todayPaidCount={game.todayPaidCount}
               />
             </div>
           ))}

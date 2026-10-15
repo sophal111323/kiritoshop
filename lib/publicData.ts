@@ -95,7 +95,8 @@ async function withDbRetry<T>(fn: () => Promise<T>): Promise<T> {
 export const getPublicHomeData = unstable_cache(
   async () => {
     return withDbRetry(async () => {
-      const [games, banners] = await Promise.all([
+      const startOfDay = getStartOfTodayCambodia();
+      const [games, banners, todayOrders] = await Promise.all([
         prisma.game.findMany({
           where: { active: true },
           orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
@@ -107,6 +108,7 @@ export const getPublicHomeData = unstable_cache(
             currencyName: true,
             imageUrl: true,
             featured: true,
+            dailyLimit: true,
           },
         }),
         prisma.heroBanner.findMany({
@@ -121,12 +123,34 @@ export const getPublicHomeData = unstable_cache(
             ctaLabel: true,
           },
         }),
+        prisma.order.groupBy({
+          by: ["gameId"],
+          where: {
+            status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+            createdAt: { gte: startOfDay },
+          },
+          _count: { id: true },
+        }),
       ]);
 
-      const sanitizedGames = games.map((g) => ({
-        ...g,
-        imageUrl: maskCdnUrl(g.imageUrl) || g.imageUrl,
-      }));
+      const todayMap = new Map<string, number>();
+      for (const row of todayOrders) {
+        todayMap.set(row.gameId, row._count.id);
+      }
+
+      const sanitizedGames = games.map((g) => {
+        const todayCount = todayMap.get(g.id) || 0;
+        const isOutOfStock = Boolean(
+          g.dailyLimit && g.dailyLimit > 0 && todayCount >= g.dailyLimit
+        );
+        return {
+          ...g,
+          imageUrl: maskCdnUrl(g.imageUrl) || g.imageUrl,
+          dailyLimit: g.dailyLimit,
+          todayPaidCount: todayCount,
+          isOutOfStock,
+        };
+      });
 
       const sanitizedBanners = banners.map((b) => ({
         ...b,
@@ -240,12 +264,28 @@ const getCachedPublicGameBySlug = unstable_cache(
 
     if (!game) return null;
 
+    const startOfDay = getStartOfTodayCambodia();
+    let isGameOutOfStock = false;
+    let gameTodayPaidCount = 0;
+
+    if (game.dailyLimit && game.dailyLimit > 0) {
+      gameTodayPaidCount = await prisma.order.count({
+        where: {
+          gameId: game.id,
+          status: { in: ["PAID", "PROCESSING", "DELIVERED"] },
+          createdAt: { gte: startOfDay },
+        },
+      });
+      if (gameTodayPaidCount >= game.dailyLimit) {
+        isGameOutOfStock = true;
+      }
+    }
+
     const hasAnyLimit = game.products.some((p) => p.stockLimit || p.dailyLimit);
     const totalSoldMap = new Map<string, number>();
     const todaySoldMap = new Map<string, number>();
 
     if (hasAnyLimit) {
-      const startOfDay = getStartOfTodayCambodia();
       const productIds = game.products.map((p) => p.id);
 
       const [totalPaidGroup, todayPaidGroup] = await Promise.all([
@@ -282,7 +322,7 @@ const getCachedPublicGameBySlug = unstable_cache(
 
       const isStockExceeded = p.stockLimit !== null && p.stockLimit !== undefined && totalSold >= p.stockLimit;
       const isDailyExceeded = p.dailyLimit !== null && p.dailyLimit !== undefined && todaySold >= p.dailyLimit;
-      const isAvailable = p.inStock !== false && !isStockExceeded && !isDailyExceeded;
+      const isAvailable = !isGameOutOfStock && p.inStock !== false && !isStockExceeded && !isDailyExceeded;
 
       return {
         ...p,
@@ -310,7 +350,7 @@ const getCachedPublicGameBySlug = unstable_cache(
       updatedAt: new Date(),
       isRandomSpin: true,
       randomPackageId: pkg.id,
-      inStock: (pkg as any).inStock !== false,
+      inStock: !isGameOutOfStock && (pkg as any).inStock !== false,
       description: pkg.description,
       slots: pkg.slots,
     }));
@@ -321,6 +361,8 @@ const getCachedPublicGameBySlug = unstable_cache(
       bannerUrl: maskCdnUrl(game.bannerUrl),
       products: [...mysteryProducts, ...normalProducts],
       randomPackages: game.randomPackages,
+      isOutOfStock: isGameOutOfStock,
+      todayPaidCount: gameTodayPaidCount,
     };
   },
   ["public-game-by-slug-v2"],
