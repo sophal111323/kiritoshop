@@ -701,7 +701,7 @@ export default function CheckoutClient() {
                     </div>
 
                     <h1 className="font-display text-2xl sm:text-3xl font-black text-sky-950 mb-2 tracking-tight">
-                      ទំនាក់ទំនងទៅកាន់ Admin ដើម្បីទទួលបានអីវ៉ាន់
+                      សូមទំនាក់ទំនងទៅកាន់ admin ដើម្បីទទួលបានផលិតផល
                     </h1>
 
                     <p className="mx-auto max-w-lg text-xs sm:text-sm font-semibold text-sky-800/90 leading-relaxed mb-5">
@@ -711,7 +711,9 @@ export default function CheckoutClient() {
                     {/* Prominent Telegram Button */}
                     <div className="mx-auto max-w-md mb-5">
                       <a
-                        href="https://t.me/kiritostore46"
+                        href={`https://t.me/kiritostore46?text=${encodeURIComponent(
+                          `ជំរាបសួរបង ខ្ញុំបានទិញឈុតក្នុងតម្លៃ $${Number(order.amountUsd).toFixed(2)} idហ្គេមរបស់ខ្ញុំ: ${order.playerUid || ""} Order number: ${order.orderNumber}`
+                        )}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="group relative flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-[#0088cc] via-[#0099e6] to-[#29b6f6] px-6 py-4 text-base sm:text-lg font-black text-white shadow-xl shadow-sky-500/35 hover:shadow-2xl hover:shadow-sky-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all ring-2 ring-white/70"
@@ -721,7 +723,7 @@ export default function CheckoutClient() {
                             <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
                           </svg>
                         </span>
-                        <span>👉 ទំនាក់ទំនង Admin (t.me/kiritostore46)</span>
+                        <span>Contact to Telegram (@kiritostore46)</span>
                       </a>
                     </div>
 
@@ -757,7 +759,7 @@ export default function CheckoutClient() {
                       <button
                         type="button"
                         onClick={() => {
-                          const msg = `សួស្តី Admin ខ្ញុំបានទូទាត់ទិញ Free Fire ឈុត (${order.productName}) រួចរាល់ហើយ!\n• លេខ Order: #${order.orderNumber}\n• Player ID: ${order.playerUid}\n• តម្លៃ: $${Number(order.amountUsd).toFixed(2)}`;
+                          const msg = `ជំរាបសួរបង ខ្ញុំបានទិញឈុតក្នុងតម្លៃ $${Number(order.amountUsd).toFixed(2)} idហ្គេមរបស់ខ្ញុំ: ${order.playerUid || ""} Order number: ${order.orderNumber}`;
                           copy(msg, "ff_order_info");
                         }}
                         className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50/90 px-4 py-2.5 text-xs font-bold text-sky-700 hover:bg-sky-100 hover:text-sky-900 transition-all active:scale-95 cursor-pointer"
@@ -781,20 +783,9 @@ export default function CheckoutClient() {
                       <p className="font-bold text-sky-950 mb-1.5">📌 ជំហានងាយៗដើម្បីទទួលបានអីវ៉ាន់៖</p>
                       <ol className="list-decimal list-inside space-y-1 text-sky-800">
                         <li>ចុចប៊ូតុង <b>&quot;ចម្លងព័ត៌មាន Order&quot;</b> ខាងលើ</li>
-                        <li>ចុចលើប៊ូតុង <b>&quot;ទំនាក់ទំនង Admin&quot;</b> (t.me/kiritostore46)</li>
+                        <li>ចុចលើប៊ូតុង <b>&quot;Contact to Telegram&quot;</b> (@kiritostore46)</li>
                         <li>ផ្ញើសារនោះទៅកាន់ Admin ដើម្បីឱ្យ Admin ពិនិត្យ និងប្រគល់ឈុតជូនភ្លាមៗ</li>
                       </ol>
-                    </div>
-
-                    {/* Gift Box button */}
-                    <div className="my-4">
-                      <Link
-                        href={withOrderToken(`/gift/${order.orderNumber}`, token)}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 px-8 py-3.5 text-sm font-black text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                      >
-                        <Gift className="h-5 w-5 text-yellow-300 animate-bounce" />
-                        <span>🎁 បើកកាដូសំណាង (Open Gift)</span>
-                      </Link>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3 justify-center mt-3">

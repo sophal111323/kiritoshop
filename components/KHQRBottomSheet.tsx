@@ -33,6 +33,8 @@ type OrderPayment = {
   deliveryNote?: string | null;
   gameSlug?: string | null;
   gameName?: string | null;
+  productName?: string | null;
+  playerUid?: string | null;
   isRandomSpin?: boolean;
   expiresAt?: string | null;
   paymentExpiresAt?: string | null;
@@ -85,6 +87,17 @@ export default function KHQRBottomSheet({
   const [refreshing, setRefreshing] = useState(false);
   const [copiedOrder, setCopiedOrder] = useState(false);
   const [copiedRedeemCode, setCopiedRedeemCode] = useState(false);
+  const [copiedOutfitInfo, setCopiedOutfitInfo] = useState(false);
+
+  const isFreeFireOutfit = Boolean(
+    currentOrder.gameSlug === "freefire-shop" ||
+      currentOrder.gameName?.toLowerCase().includes("free fire ឈុត") ||
+      currentOrder.gameName?.includes("ឈុត") ||
+      currentOrder.productName?.includes("ឈុត")
+  );
+
+  const outfitTelegramText = `ជំរាបសួរបង ខ្ញុំបានទិញឈុតក្នុងតម្លៃ $${Number(currentOrder.amountUsd).toFixed(2)} idហ្គេមរបស់ខ្ញុំ: ${currentOrder.playerUid || ""} Order number: ${currentOrder.orderNumber}`;
+  const outfitTelegramUrl = `https://t.me/kiritostore46?text=${encodeURIComponent(outfitTelegramText)}`;
 
   const paymentPollBusyRef = useRef(false);
   const paymentPollStartedAtRef = useRef(Date.now());
@@ -177,6 +190,26 @@ export default function KHQRBottomSheet({
     window.setTimeout(() => setCopiedRedeemCode(false), 2000);
   }
 
+  async function copyOutfitInfo() {
+    try {
+      await navigator.clipboard.writeText(outfitTelegramText);
+    } catch {
+      const input = document.createElement("input");
+      input.value = outfitTelegramText;
+      input.setAttribute("readonly", "true");
+      input.style.position = "absolute";
+      input.style.left = "-9999px";
+
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      document.body.removeChild(input);
+    }
+
+    setCopiedOutfitInfo(true);
+    window.setTimeout(() => setCopiedOutfitInfo(false), 1800);
+  }
+
   // ✅ Generate QR locally
   useEffect(() => {
     async function generateQR() {
@@ -244,6 +277,7 @@ export default function KHQRBottomSheet({
       (currentOrder.status === "DELIVERED" && (currentOrder.redeemCode || currentOrder.deliveryNote)) ||
       (isPaid(currentOrder.status) && Boolean(currentOrder.redeemCode)) ||
       (isPaid(currentOrder.status) && currentOrder.isRandomSpin) ||
+      (isPaid(currentOrder.status) && isFreeFireOutfit) ||
       ["FAILED", "REFUNDED", "CANCELLED"].includes(currentOrder.status);
 
     if (isFinished) return;
@@ -499,6 +533,106 @@ export default function KHQRBottomSheet({
                     <Copy className="h-4 w-4" />
                   )}
                   {copiedOrder ? "Copied Order #" : "Copy Order #"}
+                </button>
+              </div>
+            </div>
+          ) : isFreeFireOutfit ? (
+            <div key="paid-outfit" className="animate-slide-up px-6 sm:px-7 py-7 text-center">
+              {/* Telegram Glowing Icon */}
+              <div className="relative mx-auto mb-3.5 flex h-16 w-16 items-center justify-center">
+                <div className="absolute inset-0 rounded-full bg-sky-400 opacity-30 blur-xl animate-pulse" />
+                <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#0088cc] via-[#0099e6] to-[#29b6f6] text-white shadow-lg shadow-sky-500/30 ring-4 ring-white">
+                  <svg className="h-7 w-7 text-white drop-shadow-sm -translate-x-0.5 translate-y-0.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black mb-2">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                <span>ការទូទាត់ប្រាក់ជោគជ័យ!</span>
+              </div>
+
+              <h3 className="text-xl sm:text-2xl font-black text-gray-900 leading-snug">
+                សូមទំនាក់ទំនងទៅកាន់ admin ដើម្បីទទួលបានផលិតផល
+              </h3>
+
+              <p className="mt-1.5 text-xs font-semibold text-gray-600 leading-relaxed max-w-sm mx-auto">
+                ការបញ្ជាទិញ Free Fire ឈុត របស់អ្នកបានជោគជ័យ! សូមចុចប៊ូតុងខាងក្រោមដើម្បីឆាតទៅ Admin តាម Telegram
+              </p>
+
+              {/* Prominent Telegram Button */}
+              <div className="mt-4">
+                <a
+                  href={outfitTelegramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#0088cc] via-[#0099e6] to-[#29b6f6] px-5 py-3.5 text-base font-black text-white shadow-xl shadow-sky-500/30 hover:shadow-sky-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all ring-2 ring-white cursor-pointer"
+                >
+                  <svg className="h-5 w-5 text-white shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
+                  </svg>
+                  <span>Contact to Telegram (@kiritostore46)</span>
+                  <ExternalLink className="h-4 w-4 text-sky-100 shrink-0" />
+                </a>
+              </div>
+
+              {/* Order Info Card */}
+              <div className="mt-4 rounded-2xl border border-sky-100 bg-sky-50/70 p-3.5 text-left text-xs">
+                <div className="flex items-center justify-between pb-2 mb-2 border-b border-sky-200/60 font-mono text-[11px]">
+                  <span className="font-bold text-sky-700">Order Number</span>
+                  <span className="font-black text-sky-950">#{currentOrder.orderNumber}</span>
+                </div>
+                <div className="space-y-1 text-sky-900">
+                  {currentOrder.productName && (
+                    <div className="flex justify-between">
+                      <span className="text-sky-600 font-medium">កញ្ចប់៖</span>
+                      <span className="font-bold">{currentOrder.productName}</span>
+                    </div>
+                  )}
+                  {currentOrder.playerUid && (
+                    <div className="flex justify-between">
+                      <span className="text-sky-600 font-medium">Player ID៖</span>
+                      <span className="font-mono font-bold">{currentOrder.playerUid}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold pt-1 border-t border-sky-200/50">
+                    <span className="text-sky-700">តម្លៃទូទាត់៖</span>
+                    <span className="text-emerald-600 font-black">${Number(currentOrder.amountUsd).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={copyOutfitInfo}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-200 bg-white px-4 py-2.5 text-xs font-extrabold text-sky-700 shadow-sm transition hover:bg-sky-50 active:scale-[0.99] cursor-pointer"
+                >
+                  {copiedOutfitInfo ? (
+                    <>
+                      <Check className="h-4 w-4 text-emerald-600" />
+                      <span className="text-emerald-700">ចម្លងរួចរាល់!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 text-sky-600" />
+                      <span>ចម្លងសារផ្ញើទៅ Admin</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={copyOrderNumber}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-[0.99] cursor-pointer"
+                >
+                  {copiedOrder ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                  {copiedOrder ? "Copied" : "Copy Order #"}
                 </button>
               </div>
             </div>

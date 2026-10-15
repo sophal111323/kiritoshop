@@ -22,7 +22,9 @@ interface OrderInfo {
   orderNumber: string;
   status: string;
   gameName: string;
+  gameSlug?: string;
   productName: string;
+  playerUid?: string | null;
   playerUidMasked: string | null;
   serverIdMasked?: string | null;
   amountUsd: number;
@@ -345,6 +347,13 @@ export default function OrderTracker() {
   const currentStep = order ? STATUS_ORDER[orderStatus] ?? -1 : -1;
   const isFailed = order ? currentStep === -1 : false;
   const isPolling = order ? !TERMINAL_STATUSES.has(orderStatus) : false;
+  const isFreeFireOutfit = Boolean(
+    order &&
+      (order.gameSlug === "freefire-shop" ||
+        order.gameName?.toLowerCase().includes("free fire ឈុត") ||
+        order.gameName?.includes("ឈុត") ||
+        order.productName?.includes("ឈុត"))
+  );
 
   return (
     <>
@@ -705,11 +714,7 @@ export default function OrderTracker() {
               </div>
             </div>
 
-            {Boolean(
-              order.gameName?.toLowerCase().includes("free fire ឈុត") ||
-                order.gameName?.includes("ឈុត") ||
-                order.productName?.includes("ឈុត")
-            ) && ["PAID", "PROCESSING", "DELIVERED"].includes(orderStatus) && (
+            {isFreeFireOutfit && ["PAID", "PROCESSING", "DELIVERED"].includes(orderStatus) && (
               <div className="mx-5 mb-5 rounded-2xl border-2 border-sky-300 bg-gradient-to-br from-sky-50 via-white to-sky-100/70 p-5 sm:mx-6 sm:mb-6 text-center shadow-lg shadow-sky-500/10">
                 <div className="relative mx-auto mb-3 flex h-16 w-16 items-center justify-center">
                   <div className="absolute inset-0 rounded-full bg-sky-400 opacity-40 blur-xl animate-pulse" />
@@ -726,25 +731,27 @@ export default function OrderTracker() {
                 </div>
 
                 <h3 className="text-lg sm:text-xl font-black text-sky-950 mb-1.5">
-                  ទំនាក់ទំនងទៅកាន់ Admin ដើម្បីទទួលបានអីវ៉ាន់
+                  សូមទំនាក់ទំនងទៅកាន់ admin ដើម្បីទទួលបានផលិតផល
                 </h3>
                 <p className="text-xs sm:text-sm font-semibold text-sky-800/90 max-w-md mx-auto mb-4">
-                  សូមចុចលើប៊ូតុងខាងក្រោមដើម្បីឆាតទៅកាន់ Admin តាម Telegram (<b>t.me/kiritostore46</b>) និងផ្ញើលេខ Order <b>#{order.orderNumber}</b> ដើម្បីទទួលបានឈុត Free Fire របស់អ្នក!
+                  សូមចុចលើប៊ូតុងខាងក្រោមដើម្បីឆាតទៅកាន់ Admin តាម Telegram (<b>@kiritostore46</b>) ដើម្បីទទួលបានឈុត Free Fire របស់អ្នក!
                 </p>
 
                 <a
-                  href="https://t.me/kiritostore46"
+                  href={`https://t.me/kiritostore46?text=${encodeURIComponent(
+                    `ជំរាបសួរបង ខ្ញុំបានទិញឈុតក្នុងតម្លៃ $${Number(order.amountUsd).toFixed(2)} idហ្គេមរបស់ខ្ញុំ: ${order.playerUid || ""} Order number: ${order.orderNumber}`
+                  )}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0088cc] via-[#0099e6] to-[#29b6f6] px-6 py-3 text-sm font-black text-white shadow-xl shadow-sky-500/35 hover:scale-[1.02] active:scale-[0.98] transition-all ring-2 ring-white/70"
                 >
                   <Send className="h-4 w-4 text-white" />
-                  <span>👉 ឆាតទៅ Admin តាម Telegram (t.me/kiritostore46)</span>
+                  <span>💬 Contact to Telegram (@kiritostore46)</span>
                 </a>
               </div>
             )}
 
-            {["PAID", "PROCESSING", "DELIVERED"].includes(orderStatus) && (
+            {["PAID", "PROCESSING", "DELIVERED"].includes(orderStatus) && !isFreeFireOutfit && (
               <div className="mx-5 mb-5 rounded-2xl border-2 border-purple-300 bg-gradient-to-r from-purple-900/10 via-purple-600/10 to-pink-600/10 p-4 sm:mx-6 sm:mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md shadow-purple-500/5">
                 <div className="flex items-center gap-3 text-center sm:text-left">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-purple-600 to-fuchsia-600 text-white shadow-md shadow-purple-500/20">
